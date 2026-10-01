@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import type { Grid } from '../sim/grid';
-import { N, NX, latAt, lonAt } from '../sim/coords';
 import { WALL_RIVER } from '../sim/grid';
 import { wallTop, type SimParams } from '../sim/simulate';
-import { CELL, VEX, wx, wz } from './coords';
+import { overviewFrame, type Frame } from './frame';
 
 const WCOL: Record<number, THREE.Color> = {
   1: new THREE.Color(0x9aa3ab),
@@ -13,7 +12,9 @@ const WCOL: Record<number, THREE.Color> = {
 };
 
 /** เขื่อนและคันกั้นน้ำ (instanced box ต่อเซลล์) */
-export function createWalls(scene: THREE.Scene, grid: Grid) {
+export function createWalls(scene: THREE.Object3D, grid: Grid, f: Frame = overviewFrame) {
+  const N = f.nx * f.nz,
+    NX = f.nx;
   const cells: number[] = [];
   for (let c = 0; c < N; c++) if (grid.wallType[c]) cells.push(c);
   const mesh = new THREE.InstancedMesh(
@@ -35,9 +36,9 @@ export function createWalls(scene: THREE.Scene, grid: Grid) {
       const on = w === WALL_RIVER ? P.walls : P.dikes;
       const top = wallTop(grid, P, c),
         base = hEff[c];
-      const hh = on ? Math.max(0.02, (top - base) * VEX) : 0.0001;
-      p.set(wx(lonAt(i)), base * VEX, wz(latAt(j)));
-      s.set(CELL * 1.02, hh, CELL * 1.02);
+      const hh = on ? Math.max(0.02, (top - base) * f.vex) : 0.0001;
+      p.set(f.x(i), base * f.vex, f.z(j));
+      s.set(f.cell * 1.02, hh, f.cell * 1.02);
       m.compose(p, q, s);
       mesh.setMatrixAt(k, m);
       mesh.setColorAt(k, WCOL[w]);

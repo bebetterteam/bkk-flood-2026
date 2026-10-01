@@ -2,7 +2,7 @@
  * กริดภูมิประเทศ (ความสูงพื้น ชนิดเซลล์ แนวเขื่อน ฯลฯ)
  * ความสูงทั้งหมดเป็น "ค่าประมาณ" ที่สร้างจากสูตร ไม่ใช่ DEM จริง หน่วยเมตร ม.รทก.
  */
-import { N, NX, NZ, idx, latAt, lonAt } from './coords';
+import { CELL_KM2, N, NX, NZ, idx, latAt, lonAt } from './coords';
 import { KING_DIKE, PAK_KHLONG_TALAT, RIVER, SUVARNA, coastLat } from '../data/geo';
 import { clamp, distPoly, fbm, gauss, sstep } from './math';
 
@@ -36,6 +36,81 @@ export interface Grid {
   pond: Float32Array;
   /** riverS ที่ปากคลองตลาด */
   pktS: number;
+
+  /** ขนาดกริด */
+  nx: number;
+  nz: number;
+  /** พื้นที่ต่อช่อง (ตร.กม.) */
+  cellKm2: number;
+  /** น้ำลดระดับต่อช่อง (ม.) — ภาพรวม 0.03 ต่อช่อง ~330 ม. กริดอื่นปรับตามขนาดช่อง */
+  loss: number;
+  /** วินาทีแอนิเมชันต่อหน่วย arrival (ภาพรวม 0.05) */
+  arrivalScale: number;
+  /** ใช้กติกาน้ำเหนือไหลเข้าแถวบนสุดหรือไม่ */
+  northInflow: boolean;
+  /** สันเขื่อนกลางเมืองก่อนทรุด และตัวคูณการทรุด (ใช้ในเกจ) */
+  coreWallBase: number;
+  coreSubW: number;
+}
+
+/** ขนาดช่องของกริดภาพรวม (ม.) ใช้แปลงค่าที่ผูกกับจำนวนช่องเป็นค่าต่อระยะทาง */
+export const OVERVIEW_CELL_M = Math.sqrt(CELL_KM2) * 1000;
+/** ค่าคาลิเบรตของภาพรวม (ต่อช่อง) */
+export const OVERVIEW_LOSS = 0.03,
+  OVERVIEW_POND_RADIUS = 6,
+  OVERVIEW_ARRIVAL_SCALE = 0.05;
+
+/** น้ำหนักการทรุดตัวตามตำแหน่ง (ทรุดมากทางตะวันออกและชายฝั่ง) */
+export const subWeightAt = (lat: number, lon: number): number =>
+  clamp(0.5 + 0.9 * clamp((lon - 100.6) / 0.25, 0, 1) + 0.5 * clamp((13.7 - lat) / 0.2, 0, 1), 0.4, 1.6);
+
+/**
+ * pond factor: ช่องต่ำกว่าพื้นรอบข้าง (เบลอแบบกล่องรัศมี R ช่อง แยกแกน) แค่ไหน × ความเป็นเมือง
+ * kind≠0 ไม่นับในค่าเฉลี่ยและได้ 0
+ */
+export function pondFactor(
+  nx: number,
+  nz: number,
+  kind: Uint8Array,
+  h0: Float32Array,
+  urban: Float32Array,
+  R: number,
+): Float32Array {
+  const N = nx * nz;
+  const tmp = new Float32Array(N),
+    bl = new Float32Array(N),
+    pond = new Float32Array(N);
+  for (let j = 0; j < nz; j++)
+    for (let i = 0; i < nx; i++) {
+      let s = 0,
+        n = 0;
+      for (let k = -R; k <= R; k++) {
+        const ii = i + k;
+        if (ii < 0 || ii >= nx) continue;
+        const c = j * nx + ii;
+        if (kind[c]) continue;
+        s += h0[c];
+        n++;
+      }
+      tmp[j * nx + i] = n ? s / n : 0;
+    }
+  for (let j = 0; j < nz; j++)
+    for (let i = 0; i < nx; i++) {
+      let s = 0,
+        n = 0;
+      for (let k = -R; k <= R; k++) {
+        const jj = j + k;
+        if (jj < 0 || jj >= nz) continue;
+        const c = jj * nx + i;
+        if (kind[c]) continue;
+        s += tmp[c];
+        n++;
+      }
+      bl[j * nx + i] = n ? s / n : 0;
+    }
+  for (let c = 0; c < N; c++)
+    pond[c] = kind[c] ? 0 : clamp(1 + (bl[c] - h0[c]) * 4, 0.25, 3.5) * (0.55 + 0.7 * urban[c]);
+  return pond;
 }
 
 export function urbanAt(lat: number, lon: number): number {
@@ -62,7 +137,6 @@ export function buildGrid(): Grid {
   const wallBase = new Float32Array(N);
   const urban = new Float32Array(N);
   const intertidal = new Uint8Array(N);
-  const pond = new Float32Array(N);
 
   for (let j = 0; j < NZ; j++)
     for (let i = 0; i < NX; i++) {
@@ -142,44 +216,29 @@ export function buildGrid(): Grid {
       }
     }
 
-  // pond factor: ต่ำกว่าพื้นรอบข้างแค่ไหน (เบลอรัศมี 6 เซลล์)
-  {
-    const tmp = new Float32Array(N),
-      bl = new Float32Array(N),
-      R = 6;
-    for (let j = 0; j < NZ; j++)
-      for (let i = 0; i < NX; i++) {
-        let s = 0,
-          n = 0;
-        for (let k = -R; k <= R; k++) {
-          const ii = i + k;
-          if (ii < 0 || ii >= NX) continue;
-          const c = idx(ii, j);
-          if (kind[c]) continue;
-          s += h0[c];
-          n++;
-        }
-        tmp[idx(i, j)] = n ? s / n : 0;
-      }
-    for (let j = 0; j < NZ; j++)
-      for (let i = 0; i < NX; i++) {
-        let s = 0,
-          n = 0;
-        for (let k = -R; k <= R; k++) {
-          const jj = j + k;
-          if (jj < 0 || jj >= NZ) continue;
-          const c = idx(i, jj);
-          if (kind[c]) continue;
-          s += tmp[c];
-          n++;
-        }
-        bl[idx(i, j)] = n ? s / n : 0;
-      }
-    for (let c = 0; c < N; c++)
-      pond[c] = kind[c] ? 0 : clamp(1 + (bl[c] - h0[c]) * 4, 0.25, 3.5) * (0.55 + 0.7 * urban[c]);
-  }
+  // pond factor: ต่ำกว่าพื้นรอบข้างแค่ไหน (เบลอรัศมี 6 เซลล์ ≈ 2 กม.)
+  const pond = pondFactor(NX, NZ, kind, h0, urban, OVERVIEW_POND_RADIUS);
 
   const pktS = 1 - distPoly(PAK_KHLONG_TALAT[0], PAK_KHLONG_TALAT[1], RIVER).t;
 
-  return { kind, h0, subW, riverS, wallType, wallBase, urban, intertidal, pond, pktS };
+  return {
+    kind,
+    h0,
+    subW,
+    riverS,
+    wallType,
+    wallBase,
+    urban,
+    intertidal,
+    pond,
+    pktS,
+    nx: NX,
+    nz: NZ,
+    cellKm2: CELL_KM2,
+    loss: OVERVIEW_LOSS,
+    arrivalScale: OVERVIEW_ARRIVAL_SCALE,
+    northInflow: true,
+    coreWallBase: 2.8,
+    coreSubW: 0.55,
+  };
 }

@@ -35,6 +35,15 @@ export function createCameraTween(camera: THREE.PerspectiveCamera, controls: Orb
   } | null = null;
   function goTo(view: CamView): void {
     const [p, t] = CAMS[view];
+    goToPose(p, t);
+  }
+  function goToPose(p: [number, number, number], t: [number, number, number], jump = false): void {
+    if (jump) {
+      camera.position.set(...p);
+      controls.target.set(...t);
+      tween = null;
+      return;
+    }
     tween = {
       t: 0,
       p0: camera.position.clone(),
@@ -51,5 +60,5 @@ export function createCameraTween(camera: THREE.PerspectiveCamera, controls: Orb
     controls.target.lerpVectors(tween.t0, tween.t1, e);
     if (tween.t >= 1) tween = null;
   }
-  return { goTo, tick };
+  return { goTo, goToPose, tick };
 }

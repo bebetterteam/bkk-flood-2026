@@ -403,7 +403,55 @@ details p {
   padding: 5px 12px;
   cursor: pointer;
 }
+/* MVP 2: ปุ่มสลับโหมด คำเตือนพื้นที่ศึกษา และ attribution */
+#topbar .seg {
+  display: inline-flex;
+}
+#topbar .seg button {
+  border-radius: 0;
+  margin-left: -1px;
+}
+#topbar .seg button:first-child {
+  border-radius: 9px 0 0 9px;
+  margin-left: 0;
+}
+#topbar .seg button:last-child {
+  border-radius: 0 9px 9px 0;
+}
+#topbar .seg button:only-child {
+  border-radius: 9px;
+}
+#topbar button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.study-note {
+  border: 1px solid var(--warn);
+  border-radius: 9px;
+  padding: 8px 10px;
+  color: var(--ink);
+}
+#attrib {
+  position: fixed;
+  left: 384px;
+  bottom: 12px;
+  z-index: 5;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 8px;
+  max-width: calc(100% - 640px);
+}
 @media (max-width: 820px) {
+  #attrib {
+    left: 8px;
+    right: 8px;
+    bottom: auto;
+    top: 52px;
+    max-width: none;
+  }
   #panel {
     top: auto;
     left: 8px;

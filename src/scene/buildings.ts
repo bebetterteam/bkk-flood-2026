@@ -18,7 +18,7 @@ interface Building {
  * ตึกสุ่มแบบกำหนด seed (ความสูงขยายเกินจริงเพื่อให้เห็นชัด)
  * ลำดับการเรียก rnd() มีผลกับฝน/อนุภาคที่สร้างต่อจากนี้ อย่าเปลี่ยนลำดับ
  */
-export function createBuildings(scene: THREE.Scene, grid: Grid, rnd: () => number) {
+export function createBuildings(scene: THREE.Object3D, grid: Grid, rnd: () => number) {
   const data: Building[] = [];
   for (let tries = 0; tries < 40000 && data.length < 2800; tries++) {
     const lat = LAT0 + rnd() * (LAT1 - LAT0),

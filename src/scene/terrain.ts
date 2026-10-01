@@ -1,31 +1,33 @@
 import * as THREE from 'three';
 import type { Grid } from '../sim/grid';
-import { N, NX, NZ, idx, latAt, lonAt } from '../sim/coords';
+import { NX, NZ, idx, latAt, lonAt } from '../sim/coords';
 import { clamp, fbm, gauss } from '../sim/math';
 import { coastLat } from '../data/geo';
-import { VEX, wx, wz } from './coords';
+import { VEX } from './coords';
+import { overviewFrame, type Frame } from './frame';
 
 export type ViewMode = 'real' | 'elev';
 
-/** BufferGeometry แบบกริด NX × NZ (ใช้ทั้งพื้นและผิวน้ำ) */
-export function gridGeometry(): THREE.BufferGeometry {
+/** BufferGeometry แบบกริด nx × nz (ใช้ทั้งพื้นและผิวน้ำ) */
+export function gridGeometry(f: Frame = overviewFrame): THREE.BufferGeometry {
+  const { nx, nz } = f;
   const g = new THREE.BufferGeometry();
-  const pos = new Float32Array(N * 3),
-    col = new Float32Array(N * 3);
-  for (let j = 0; j < NZ; j++)
-    for (let i = 0; i < NX; i++) {
-      const c = idx(i, j);
-      pos[c * 3] = wx(lonAt(i));
-      pos[c * 3 + 2] = wz(latAt(j));
+  const pos = new Float32Array(nx * nz * 3),
+    col = new Float32Array(nx * nz * 3);
+  for (let j = 0; j < nz; j++)
+    for (let i = 0; i < nx; i++) {
+      const c = j * nx + i;
+      pos[c * 3] = f.x(i);
+      pos[c * 3 + 2] = f.z(j);
     }
-  const ind = new Uint32Array((NX - 1) * (NZ - 1) * 6);
+  const ind = new Uint32Array((nx - 1) * (nz - 1) * 6);
   let k = 0;
-  for (let j = 0; j < NZ - 1; j++)
-    for (let i = 0; i < NX - 1; i++) {
-      const a = idx(i, j),
-        b = idx(i + 1, j),
-        c = idx(i, j + 1),
-        d = idx(i + 1, j + 1);
+  for (let j = 0; j < nz - 1; j++)
+    for (let i = 0; i < nx - 1; i++) {
+      const a = j * nx + i,
+        b = a + 1,
+        c = a + nx,
+        d = c + 1;
       ind[k++] = a;
       ind[k++] = c;
       ind[k++] = b;
@@ -70,7 +72,7 @@ function elevColor(h: number, out: THREE.Color): THREE.Color {
   return out.copy(ELEV[ELEV.length - 1][1]);
 }
 
-export function createTerrain(scene: THREE.Scene, grid: Grid) {
+export function createTerrain(scene: THREE.Object3D, grid: Grid) {
   const geo = gridGeometry();
   scene.add(
     new THREE.Mesh(

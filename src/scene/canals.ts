@@ -4,7 +4,7 @@ import { cellAt } from '../sim/coords';
 import { VEX, wx, wz } from './coords';
 
 /** คลองเป็นริบบอนแบนวางบนพื้น */
-export function createCanals(scene: THREE.Scene) {
+export function createCanals(scene: THREE.Object3D) {
   const group = new THREE.Group();
   scene.add(group);
   const mat = new THREE.MeshStandardMaterial({ color: 0x3c8fb0, roughness: 0.4 });

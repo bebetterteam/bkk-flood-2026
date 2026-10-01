@@ -8,6 +8,8 @@ export interface Stage {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
+  /** ระยะหมอก (เปลี่ยนตามโหมด) */
+  setFog(near: number, far: number): void;
 }
 
 export const isDark = (): boolean =>
@@ -22,10 +24,12 @@ export function createStage(container: HTMLElement): Stage {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
+  let fogNear = 90,
+    fogFar = 190;
   const applyBg = () => {
     const col = isDark() ? 0x0e161d : 0xdfe8ee;
     scene.background = new THREE.Color(col);
-    scene.fog = new THREE.Fog(col, 90, 190);
+    scene.fog = new THREE.Fog(col, fogNear, fogFar);
   };
   applyBg();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyBg);
@@ -50,11 +54,16 @@ export function createStage(container: HTMLElement): Stage {
     renderer.setSize(innerWidth, innerHeight);
   });
 
-  return { renderer, scene, camera, controls };
+  const setFog = (near: number, far: number) => {
+    fogNear = near;
+    fogFar = far;
+    applyBg();
+  };
+  return { renderer, scene, camera, controls, setFog };
 }
 
 /** ฐานดินใต้แผนที่ */
-export function addBaseBlock(scene: THREE.Scene): void {
+export function addBaseBlock(scene: THREE.Object3D): void {
   const w = wx(LON1) - wx(LON0),
     d = wz(LAT0) - wz(LAT1);
   const base = new THREE.Mesh(

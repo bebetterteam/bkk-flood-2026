@@ -2,24 +2,29 @@ import * as THREE from 'three';
 import { RIVER } from '../data/geo';
 import { clamp } from '../sim/math';
 import { riverLevel, type SimParams } from '../sim/simulate';
-import { VEX, wx, wz } from './coords';
+import { overviewFrame, type Frame } from './frame';
 
 const RMAX = 9000;
 
 /** เม็ดฝน: จำนวนที่แสดงแปรตามความแรงฝน */
-export function createRain(scene: THREE.Scene, rnd: () => number) {
+export function createRain(
+  scene: THREE.Object3D,
+  rnd: () => number,
+  /** กล่องที่ฝนตก: กว้าง × สูง × ลึก (หน่วยโลก) และขนาดเม็ด */
+  box = { w: 60, h: 20, d: 50, size: 0.09, speed: 1 },
+) {
   const geo = new THREE.BufferGeometry();
   const rp = new Float32Array(RMAX * 3);
   for (let k = 0; k < RMAX; k++) {
-    rp[k * 3] = (rnd() - 0.5) * 60;
-    rp[k * 3 + 1] = rnd() * 20;
-    rp[k * 3 + 2] = (rnd() - 0.5) * 50;
+    rp[k * 3] = (rnd() - 0.5) * box.w;
+    rp[k * 3 + 1] = rnd() * box.h;
+    rp[k * 3 + 2] = (rnd() - 0.5) * box.d;
   }
   geo.setAttribute('position', new THREE.BufferAttribute(rp, 3));
   scene.add(
     new THREE.Points(
       geo,
-      new THREE.PointsMaterial({ color: 0x7fb2e5, size: 0.09, transparent: true, opacity: 0.75 }),
+      new THREE.PointsMaterial({ color: 0x7fb2e5, size: box.size, transparent: true, opacity: 0.75 }),
     ),
   );
 
@@ -29,8 +34,8 @@ export function createRain(scene: THREE.Scene, rnd: () => number) {
     if (rc) {
       const a = geo.attributes.position.array as Float32Array;
       for (let k = 0; k < rc; k++) {
-        a[k * 3 + 1] -= dt * (14 + (k % 7));
-        if (a[k * 3 + 1] < 0) a[k * 3 + 1] += 20;
+        a[k * 3 + 1] -= dt * (14 + (k % 7)) * box.speed;
+        if (a[k * 3 + 1] < 0) a[k * 3 + 1] += box.h;
       }
       geo.attributes.position.needsUpdate = true;
     }
@@ -41,8 +46,14 @@ export function createRain(scene: THREE.Scene, rnd: () => number) {
 const FMAX = 700;
 
 /** อนุภาคแสดงการไหลของเจ้าพระยา (เร็วขึ้นตามน้ำเหนือ) */
-export function createRiverFlow(scene: THREE.Scene, rnd: () => number) {
-  const rWorld = RIVER.map(([la, lo]) => new THREE.Vector3(wx(lo), 0, wz(la)));
+export function createRiverFlow(
+  scene: THREE.Object3D,
+  rnd: () => number,
+  f: Frame = overviewFrame,
+  /** ขนาดอนุภาค และความกว้างการกระจาย (หน่วยโลก) */
+  opt = { size: 0.12, spread: 0.5, clip: false },
+) {
+  const rWorld = RIVER.map(([la, lo]) => new THREE.Vector3(f.wx(lo), 0, f.wz(la)));
   const rLen = [0];
   for (let k = 1; k < rWorld.length; k++) rLen.push(rLen[k - 1] + rWorld[k].distanceTo(rWorld[k - 1]));
   const RTOT = rLen[rLen.length - 1];
@@ -58,13 +69,13 @@ export function createRiverFlow(scene: THREE.Scene, rnd: () => number) {
     flowOff = new Float32Array(FMAX);
   for (let k = 0; k < FMAX; k++) {
     flowU[k] = rnd();
-    flowOff[k] = (rnd() - 0.5) * 0.5;
+    flowOff[k] = (rnd() - 0.5) * opt.spread;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(FMAX * 3), 3));
   const pts = new THREE.Points(
     geo,
-    new THREE.PointsMaterial({ color: 0xffffff, size: 0.12, transparent: true, opacity: 0.8 }),
+    new THREE.PointsMaterial({ color: 0xffffff, size: opt.size, transparent: true, opacity: 0.8 }),
   );
   pts.renderOrder = 3;
   scene.add(pts);
@@ -83,7 +94,9 @@ export function createRiverFlow(scene: THREE.Scene, rnd: () => number) {
         L = Math.hypot(dx, dz) || 1;
       fa[k * 3] = fv.x - (dz / L) * flowOff[k];
       fa[k * 3 + 2] = fv.z + (dx / L) * flowOff[k];
-      fa[k * 3 + 1] = riverLevel(P, 1 - flowU[k]) * VEX + 0.04;
+      fa[k * 3 + 1] = riverLevel(P, 1 - flowU[k]) * f.vex + 0.04;
+      // โหมดพื้นที่ศึกษา: ซ่อนอนุภาคที่อยู่นอกขอบเขต
+      if (opt.clip && !f.inBounds(f.latOfZ(fa[k * 3 + 2]), f.lonOfX(fa[k * 3]))) fa[k * 3 + 1] = -1e4;
     }
     geo.attributes.position.needsUpdate = true;
   }

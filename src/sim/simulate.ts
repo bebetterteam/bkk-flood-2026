@@ -7,7 +7,6 @@
  *
  * ⚠️ ค่าคาลิเบรตทั้งหมดในไฟล์นี้ถูกล็อกด้วยเทสต์ ถ้าแก้ต้องอัปเดตเทสต์และบันทึกเหตุผล
  */
-import { CELL_KM2, N, NX, NZ, idx } from './coords';
 import { Heap } from './heap';
 import { clamp } from './math';
 import { WALL_RIVER, type Grid } from './grid';
@@ -75,10 +74,32 @@ export const riverLevel = (P: SimParams, s: number): number =>
 export const wallTop = (g: Grid, P: SimParams, c: number): number =>
   g.wallBase[c] - (P.subs / 100) * g.subW[c];
 
-const LOSS = 0.03;
+/**
+ * แหล่งน้ำเพิ่มเติมที่ขอบพื้นที่ (ใช้ทำ nesting: เอาระดับน้ำจากโมเดลภาพรวมมาใส่ขอบพื้นที่ศึกษา)
+ * cells[k] ได้ระดับน้ำ level[k] จากแหล่ง src[k] ถ้าสูงกว่าสิ่งกีดขวางของช่องนั้น
+ */
+export interface Boundary {
+  cells: ArrayLike<number>;
+  level: ArrayLike<number>;
+  src: ArrayLike<number>;
+}
 
-export function simulate(g: Grid, P: SimParams): SimResult {
-  const { kind, h0, subW, wallType, riverS, intertidal, pond } = g;
+export function simulate(g: Grid, P: SimParams, boundary?: Boundary): SimResult {
+  const {
+    kind,
+    h0,
+    subW,
+    wallType,
+    riverS,
+    intertidal,
+    pond,
+    nx: NX,
+    nz: NZ,
+    loss: LOSS,
+    cellKm2: CELL_KM2,
+  } = g;
+  const N = NX * NZ;
+  const idx = (i: number, j: number) => j * NX + i;
   const hEff = new Float32Array(N),
     reach = new Float32Array(N),
     arrival = new Float32Array(N),
@@ -108,15 +129,27 @@ export function simulate(g: Grid, P: SimParams): SimResult {
       H.push(reach[c], c);
     }
   }
+  // น้ำเหนือไหลบ่าเข้าขอบบนของกริด (เฉพาะกริดที่ขอบบนคือทุ่งด้านเหนือจริง)
   const north = P.flow > 2800 ? 1.75 + ((P.flow - 2800) / 1000) * 0.6 : -1e9;
-  for (let i = 0; i < NX; i++) {
-    const c = idx(i, 0);
-    if (!kind[c] && north > obst[c]) {
-      reach[c] = north;
-      src[c] = SRC_NORTH;
-      H.push(north, c);
+  if (g.northInflow)
+    for (let i = 0; i < NX; i++) {
+      const c = idx(i, 0);
+      if (!kind[c] && north > obst[c]) {
+        reach[c] = north;
+        src[c] = SRC_NORTH;
+        H.push(north, c);
+      }
     }
-  }
+  if (boundary)
+    for (let k = 0; k < boundary.cells.length; k++) {
+      const c = boundary.cells[k],
+        lv = boundary.level[k];
+      if (!kind[c] && lv > obst[c] && lv > reach[c]) {
+        reach[c] = lv;
+        src[c] = boundary.src[k];
+        H.push(lv, c);
+      }
+    }
   while (H.n) {
     const c = H.pop();
     const i = c % NX,
@@ -172,7 +205,7 @@ export function simulate(g: Grid, P: SimParams): SimResult {
     }
     if (d > 0.5) deep++;
   }
-  const coreWall = 2.8 - sub * 0.55;
+  const coreWall = g.coreWallBase - sub * g.coreSubW;
   return {
     riverMid,
     cap,

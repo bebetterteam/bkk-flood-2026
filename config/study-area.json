@@ -1,7 +1,12 @@
 {
   "$comment": "ค่าตั้งของพื้นที่ศึกษา (MVP 2) — แก้ bbox แล้วรัน npm run data:build เพื่อสร้างข้อมูลใหม่",
   "name": "เกาะรัตนโกสินทร์ – คลองเตย",
-  "bbox": { "south": 13.7, "west": 100.48, "north": 13.78, "east": 100.58 },
+  "bbox": {
+    "south": 13.7,
+    "west": 100.48,
+    "north": 13.78,
+    "east": 100.58
+  },
   "cellMeters": 30,
   "dem": {
     "source": "fabdem",
@@ -40,5 +45,9 @@
     },
     "simplifyMeters": 0.5
   },
-  "overpassUrl": "https://overpass-api.de/api/interpreter"
+  "overpassUrl": "https://overpass-api.de/api/interpreter",
+  "view": {
+    "$comment": "การแสดงผลในโหมดพื้นที่ศึกษา: 1 หน่วยโลก = 10 ม., ตึกใช้มาตราส่วนจริง, พื้นขยายแนวดิ่งตามค่านี้",
+    "terrainExaggeration": 3
+  }
 }

@@ -2,7 +2,7 @@
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { OUT, RAW, REPORTS, ROOT, loadConfig } from './lib/config.ts';
 import { encodePng } from './lib/png.ts';
-import { rasterizeLines, rasterizePolygons, type GridMeta } from './lib/raster.ts';
+import { rasterizeLines, rasterizePolygons, type GridMeta } from '../src/sim/raster.ts';
 
 const cfg = loadConfig();
 const meta: GridMeta & Record<string, unknown> = JSON.parse(readFileSync(OUT + 'meta.json', 'utf8'));

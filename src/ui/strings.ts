@@ -136,3 +136,51 @@ export const TIP = {
   /** ชื่อแนวป้องกันตาม wallType */
   walls: ['', 'แนวเขื่อน', 'คันกั้นน้ำพระราชดำริ', 'คันกั้นน้ำชายฝั่ง', 'คันกั้นน้ำสุวรรณภูมิ'],
 };
+
+/** โหมดพื้นที่ศึกษา (ข้อมูลจริง) */
+export const STUDY = {
+  modeOverview: 'ภาพรวมทั้งเมือง',
+  modeStudy: 'พื้นที่ศึกษา (ข้อมูลจริง)',
+  loading: 'กำลังโหลดข้อมูลพื้นที่ศึกษา…',
+  building: 'กำลังสร้างแบบจำลองตึก…',
+  loadFailed: (msg: string) => `โหลดพื้นที่ศึกษาไม่สำเร็จ: ${msg}`,
+  cams: [
+    ['all', 'ทั้งพื้นที่'],
+    ['rattana', 'เกาะรัตนโกสินทร์'],
+    ['yaowarat', 'เยาวราช–หัวลำโพง'],
+    ['klongtoei', 'คลองเตย'],
+  ] as [string, string][],
+  /** คำเตือนเฉพาะโหมดข้อมูลจริง */
+  note: (offset: number, calibrated: boolean, defaultPct: number, exaggeration: number) =>
+    `⚠️ <b>พื้นที่ศึกษา (เกาะรัตนโกสินทร์ – คลองเตย)</b> ใช้ความสูงพื้นจริงจาก DEM ดาวเทียม ซึ่งคลาดเคลื่อนแนวดิ่งได้ราว 1–2 ม.` +
+    (calibrated
+      ? ` ปรับเป็น ม.รทก. ด้วย offset ${offset} ม.`
+      : ` และ<b>ยังไม่ได้ปรับระดับอ้างอิงให้เป็น ม.รทก.</b> (offset = ${offset} ม.) ระดับพื้นจึงอาจคลาดจากจริงเป็นเมตร ตัวเลขน้ำท่วมในโหมดนี้ใช้ดูกลไกเท่านั้น`) +
+    ` · ตึก ~${defaultPct}% ไม่มีข้อมูลความสูงใน OSM จึงใช้ค่าเริ่มต้นตามประเภท · น้ำจากนอกพื้นที่ (น้ำเหนือ/ทะเล) มาจากผลของโมเดลภาพรวม · พื้นขยายแนวดิ่ง ×${exaggeration} ตึกใช้ความสูงจริง`,
+  attribution: (dem: string) =>
+    `ความสูงพื้นที่: ${dem} (Hawker et al. 2022, CC BY-NC-SA 4.0) · อาคาร แม่น้ำ คลอง: © OpenStreetMap contributors`,
+  legendElevTitle: 'ความสูงพื้นจาก DEM (ม., ยังไม่ปรับเป็น ม.รทก.)',
+  legendElevTicks: ['≤0', '3', '5', '7', '10+'],
+  tipDem: (calibrated: boolean) =>
+    `<br><span style="color:var(--muted)">จาก FABDEM${calibrated ? '' : ' · ยังไม่ปรับเป็น ม.รทก.'}</span>`,
+  tipCanal: '<br>คลอง (ไม่ใช่แหล่งน้ำในแบบจำลอง)',
+  tipBuilding: (type: string, h: number, src: string) =>
+    `<b>อาคาร</b> <span style="color:var(--muted)">(${type})</span><br>สูง ${h.toFixed(1)} ม. · ที่มาของความสูง: ${src}`,
+  heightSources: ['แท็ก height ใน OSM', 'จำนวนชั้น × 3.2 ม.', 'ค่าเริ่มต้นตามประเภทอาคาร'],
+  buildingTypes: {
+    yes: 'ไม่ระบุ',
+    house: 'บ้าน',
+    commercial: 'พาณิชย์',
+    apartments: 'อาคารชุด',
+    temple: 'วัด',
+    residential: 'ที่อยู่อาศัย',
+    retail: 'ร้านค้า',
+    school: 'โรงเรียน',
+    office: 'สำนักงาน',
+    hotel: 'โรงแรม',
+    industrial: 'อุตสาหกรรม',
+    warehouse: 'โกดัง',
+    hospital: 'โรงพยาบาล',
+    university: 'มหาวิทยาลัย',
+  } as Record<string, string>,
+};

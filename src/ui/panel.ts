@@ -43,6 +43,7 @@ export function renderPanel(root: HTMLElement): void {
     <summary>${T.learnSummary}</summary>
     ${LEARN.map((p) => `<p>${p}</p>`).join('')}
   </details>
+  <p class="disc study-note" id="study-note" style="display:none"></p>
   <p class="disc">${DISCLAIMER}</p>`;
 }
 

@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import type { Grid } from '../sim/grid';
-import { N } from '../sim/coords';
 import type { SimResult } from '../sim/simulate';
-import { VEX } from './coords';
+import { overviewFrame, type Frame } from './frame';
 import { gridGeometry } from './terrain';
 
 const C = (hex: number) => new THREE.Color(hex);
@@ -17,10 +16,12 @@ const WC = {
 
 /**
  * ผิวน้ำ: ความลึกที่แสดง (cur) ค่อย ๆ เข้าหาผลการจำลอง
- * น้ำภายนอกมาถึงแต่ละเซลล์ตามระยะ arrival × 0.05 วินาที, น้ำฝนค่อย ๆ ขังภายใน 3 วินาที
+ * น้ำภายนอกมาถึงแต่ละเซลล์ตามระยะ arrival × grid.arrivalScale วินาที (ภาพรวม 0.05), น้ำฝนค่อย ๆ ขังภายใน 3 วินาที
  */
-export function createWater(scene: THREE.Scene, grid: Grid) {
-  const geo = gridGeometry();
+export function createWater(scene: THREE.Object3D, grid: Grid, f: Frame = overviewFrame) {
+  const N = f.nx * f.nz,
+    VEX = f.vex;
+  const geo = gridGeometry(f);
   const nrm = new Float32Array(N * 3);
   for (let c = 0; c < N; c++) nrm[c * 3 + 1] = 1;
   geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
@@ -60,7 +61,7 @@ export function createWater(scene: THREE.Scene, grid: Grid) {
     for (let c = 0; c < N; c++) {
       let tgt;
       if (kind[c]) tgt = tExt[c];
-      else tgt = (tExt[c] > 0 && simT >= arrival[c] * 0.05 ? tExt[c] : 0) + tRain[c] * rainK;
+      else tgt = (tExt[c] > 0 && simT >= arrival[c] * grid.arrivalScale ? tExt[c] : 0) + tRain[c] * rainK;
       cur[c] += (tgt - cur[c]) * k;
       const d = cur[c];
       if (kind[c]) {
@@ -82,7 +83,7 @@ export function createWater(scene: THREE.Scene, grid: Grid) {
     }
     geo.attributes.position.needsUpdate = true;
     geo.attributes.color.needsUpdate = true;
-    return simT < Math.max(3.5, sim.maxArr * 0.05 + 1);
+    return simT < Math.max(3.5, sim.maxArr * grid.arrivalScale + 1);
   }
   return { cur, reset, update };
 }

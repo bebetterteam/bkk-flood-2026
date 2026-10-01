@@ -1,11 +1,13 @@
-import type { CamView } from '../scene/cameraViews';
 import type { ViewMode } from '../scene/terrain';
-import { T, TOPBAR } from './strings';
+import { STUDY, T, TOPBAR } from './strings';
+
+export type AppMode = 'overview' | 'study';
 
 export interface TopbarCallbacks {
   onView: (v: ViewMode) => void;
   onLabels: (show: boolean) => void;
-  onCam: (v: CamView) => void;
+  onCam: (v: string) => void;
+  onMode: (m: AppMode) => void;
 }
 
 /** ปุ่มด้านบนขวา (โหมดแสดงผล ป้ายชื่อ มุมกล้อง) + นาฬิกาจำลองด้านล่าง */
@@ -15,10 +17,28 @@ export function createTopbar(
   cb: TopbarCallbacks & { onReplay: () => void },
 ) {
   bar.innerHTML =
+    `<span class="seg"><button data-mode="overview" class="on">${STUDY.modeOverview}</button>` +
+    `<button data-mode="study">${STUDY.modeStudy}</button></span>` +
     `<button data-view="real" class="on">${TOPBAR.viewReal}</button>` +
     `<button data-view="elev">${TOPBAR.viewElev}</button>` +
     `<button id="btn-labels" class="on">${TOPBAR.labels}</button>` +
-    TOPBAR.cams.map(([k, n]) => `<button data-cam="${k}">${n}</button>`).join('');
+    `<span id="cams" class="seg"></span>`;
+  const modes = bar.querySelectorAll<HTMLButtonElement>('[data-mode]');
+  modes.forEach(
+    (b) =>
+      (b.onclick = () => {
+        if (b.classList.contains('on') || b.disabled) return;
+        cb.onMode(b.dataset.mode as AppMode);
+      }),
+  );
+  const camsBox = bar.querySelector<HTMLElement>('#cams')!;
+  function setCams(list: readonly (readonly [string, string])[]) {
+    camsBox.innerHTML = list.map(([k, n]) => `<button data-cam="${k}">${n}</button>`).join('');
+    camsBox
+      .querySelectorAll<HTMLButtonElement>('[data-cam]')
+      .forEach((b) => (b.onclick = () => cb.onCam(b.dataset.cam!)));
+  }
+  setCams(TOPBAR.cams);
   const views = bar.querySelectorAll<HTMLButtonElement>('[data-view]');
   views.forEach(
     (b) =>
@@ -34,9 +54,6 @@ export function createTopbar(
     lb.classList.toggle('on', show);
     cb.onLabels(show);
   };
-  bar
-    .querySelectorAll<HTMLButtonElement>('[data-cam]')
-    .forEach((b) => (b.onclick = () => cb.onCam(b.dataset.cam as CamView)));
 
   clock.innerHTML = `<span id="clock-t">${T.clockInit}</span><button id="replay">${T.replay}</button>`;
   const ct = clock.querySelector<HTMLElement>('#clock-t')!;
@@ -44,6 +61,16 @@ export function createTopbar(
   return {
     setMoving(moving: boolean) {
       ct.textContent = moving ? T.clockMoving : T.clockSteady;
+    },
+    setText(t: string) {
+      ct.textContent = t;
+    },
+    setMode(m: AppMode) {
+      modes.forEach((x) => x.classList.toggle('on', x.dataset.mode === m));
+      setCams(m === 'overview' ? TOPBAR.cams : STUDY.cams);
+    },
+    setModeBusy(busy: boolean) {
+      modes.forEach((x) => (x.disabled = busy));
     },
   };
 }

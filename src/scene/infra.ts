@@ -5,7 +5,7 @@ import type { SimParams } from '../sim/simulate';
 import { VEX, wx, wz } from './coords';
 
 /** สถานีสูบน้ำ + อุโมงค์ระบายน้ำ */
-export function createInfra(scene: THREE.Scene) {
+export function createInfra(scene: THREE.Object3D) {
   const group = new THREE.Group();
   scene.add(group);
   const pumps = PUMPS.map(([la, lo]) => {
