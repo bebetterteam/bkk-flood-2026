@@ -1,0 +1,44 @@
+{
+  "$comment": "ค่าตั้งของพื้นที่ศึกษา (MVP 2) — แก้ bbox แล้วรัน npm run data:build เพื่อสร้างข้อมูลใหม่",
+  "name": "เกาะรัตนโกสินทร์ – คลองเตย",
+  "bbox": { "south": 13.7, "west": 100.48, "north": 13.78, "east": 100.58 },
+  "cellMeters": 30,
+  "dem": {
+    "source": "fabdem",
+    "fabdemZipUrl": "https://data.bris.ac.uk/datasets/s5hqmjcdj8yo2ibzi9b4ew3sn/N10E100-N20E110_FABDEM_V1-2.zip",
+    "fabdemTile": "N13E100_FABDEM_V1-2.tif",
+    "copernicusUrl": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N13_00_E100_00_DEM/Copernicus_DSM_COG_10_N13_00_E100_00_DEM.tif"
+  },
+  "verticalOffset": {
+    "value": 0,
+    "status": "uncalibrated",
+    "note": "ค่าที่บวกเข้ากับ DEM (อ้างอิง geoid EGM2008) เพื่อแปลงเป็น ม.รทก. ยังไม่ได้ปรับเทียบ — ใช้ 0 ไปก่อนและแสดงคำเตือนในแอป ดู CLAUDE.md"
+  },
+  "riverWallTop": 2.8,
+  "buildings": {
+    "metersPerLevel": 3.2,
+    "defaultHeight": 9,
+    "defaultHeightByType": {
+      "house": 6,
+      "detached": 6,
+      "residential": 9,
+      "apartments": 24,
+      "commercial": 12,
+      "retail": 9,
+      "office": 30,
+      "hotel": 30,
+      "temple": 12,
+      "school": 12,
+      "university": 15,
+      "hospital": 18,
+      "industrial": 9,
+      "warehouse": 8,
+      "garage": 3,
+      "roof": 4,
+      "shed": 3,
+      "kiosk": 3
+    },
+    "simplifyMeters": 0.5
+  },
+  "overpassUrl": "https://overpass-api.de/api/interpreter"
+}

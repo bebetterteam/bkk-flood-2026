@@ -3,3 +3,7 @@ node_modules
 prototype
 package-lock.json
 INIT_PROMPT.md
+reports/*.png
+public/data
+reports
+MVP2_PROMPT.md

@@ -1,0 +1,146 @@
+{
+ "count": 92261,
+ "rings": 92459,
+ "vertices": 427804,
+ "coords": "Uint16 คู่ (x,y) หน่วย 0.25 ม. จากมุมตะวันตกเฉียงใต้ของ bbox; x=ตะวันออก y=เหนือ; ring แรก = outer ที่เหลือ = hole",
+ "quantMeters": 0.25,
+ "extentMeters": [
+  10813.44,
+  8848
+ ],
+ "metersPerDegree": [
+  108134.41556512367,
+  110600
+ ],
+ "bbox": {
+  "south": 13.7,
+  "west": 100.48,
+  "north": 13.78,
+  "east": 100.58
+ },
+ "offsets": {
+  "ringStart": [
+   0,
+   92261
+  ],
+  "ringVertStart": [
+   369044,
+   92459
+  ],
+  "heightDm": [
+   738880,
+   92261
+  ],
+  "ringVertCount": [
+   923404,
+   92459
+  ],
+  "verts": [
+   1108324,
+   855608
+  ],
+  "src": [
+   2819540,
+   92261
+  ],
+  "type": [
+   2911804,
+   92261
+  ],
+  "ringCount": [
+   3004068,
+   92261
+  ]
+ },
+ "heightUnit": "dm",
+ "heightSources": [
+  "height",
+  "building:levels × 3.2 ม.",
+  "ค่าเริ่มต้นตามประเภท"
+ ],
+ "heightSourceCount": [
+  558,
+  16337,
+  75366
+ ],
+ "typeNames": [
+  "yes",
+  "house",
+  "commercial",
+  "apartments",
+  "temple",
+  "residential",
+  "retail",
+  "school",
+  "terrace",
+  "roof",
+  "university",
+  "carport",
+  "hospital",
+  "hotel",
+  "office",
+  "warehouse",
+  "semidetached_house",
+  "detached",
+  "industrial",
+  "college",
+  "train_station",
+  "construction",
+  "dormitory",
+  "kindergarten",
+  "church",
+  "civic",
+  "garage",
+  "chapel",
+  "pavilion",
+  "mosque",
+  "parking",
+  "station",
+  "ruins",
+  "stadium",
+  "government",
+  "service",
+  "boathouse",
+  "condominium",
+  "greenhouse",
+  "shed",
+  "tower",
+  "abandoned",
+  "garages",
+  "fire_station",
+  "shrine",
+  "no",
+  "yes;apartments",
+  "mall",
+  "pagoda",
+  "transportation",
+  "cathedral",
+  "historic",
+  "hall",
+  "supermarket",
+  "cultural_centre",
+  "yes;temple",
+  "wayside_shrine",
+  "maison_mitoyennemaison_jumelée",
+  "restaurant",
+  "house;yes",
+  "ลานจักรพงษ์",
+  "ลานคัคณางค์",
+  "cabin",
+  "brewery",
+  "kiosk",
+  "yes;retail",
+  "commercial;yes",
+  "allotment_house",
+  "Condo",
+  "inside_maison_hotel_bangkok_area",
+  "stable"
+ ],
+ "attribution": "© OpenStreetMap contributors (ODbL)",
+ "generated": "2026-10-01",
+ "dropped": {
+  "tooSmall": 88,
+  "outsideBbox": 0,
+  "levelsRejected": 14
+ }
+}

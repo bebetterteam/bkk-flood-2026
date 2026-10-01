@@ -1,0 +1,47 @@
+{
+  "name": "เกาะรัตนโกสินทร์ – คลองเตย",
+  "bbox": {
+    "south": 13.7,
+    "west": 100.48,
+    "north": 13.78,
+    "east": 100.58
+  },
+  "nx": 360,
+  "nz": 295,
+  "dlat": 0.00027118644067796637,
+  "dlon": 0.000277777777777762,
+  "cellMeters": [
+    30.037,
+    29.993
+  ],
+  "layout": "Float32 little-endian, row-major, แถวแรก = ขอบเหนือ, ค่าที่กึ่งกลางช่อง",
+  "units": "เมตร อ้างอิง geoid EGM2008 (ยังไม่ได้บวก verticalOffset)",
+  "verticalDatum": "EGM2008",
+  "verticalOffset": {
+    "value": 0,
+    "status": "uncalibrated",
+    "note": "ค่าที่บวกเข้ากับ DEM (อ้างอิง geoid EGM2008) เพื่อแปลงเป็น ม.รทก. ยังไม่ได้ปรับเทียบ — ใช้ 0 ไปก่อนและแสดงคำเตือนในแอป ดู CLAUDE.md"
+  },
+  "source": {
+    "id": "FABDEM V1-2",
+    "tile": "N13E100_FABDEM_V1-2.tif",
+    "url": "https://data.bris.ac.uk/datasets/s5hqmjcdj8yo2ibzi9b4ew3sn/N10E100-N20E110_FABDEM_V1-2.zip",
+    "license": "CC BY-NC-SA 4.0 (ห้ามใช้เชิงพาณิชย์)",
+    "citation": "Hawker, L., Uhe, P., Paulo, L., Sosa, J., Savage, J., Sampson, C., Neal, J. (2022). A 30 m global map of elevation with forests and buildings removed. Environmental Research Letters 17, 024016."
+  },
+  "sourceRaster": {
+    "width": 3600,
+    "height": 3600,
+    "resolution": [
+      0.0002777777777777778,
+      -0.0002777777777777773
+    ],
+    "origin": [
+      100,
+      14
+    ],
+    "nodata": -9999
+  },
+  "resampling": "bilinear",
+  "generated": "2026-10-01"
+}

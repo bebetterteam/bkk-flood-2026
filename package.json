@@ -5,19 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && tsc --noEmit -p scripts && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "lint": "eslint . && prettier --check ."
+    "lint": "eslint . && prettier --check .",
+    "data:fetch": "node scripts/fetch-dem.ts && node scripts/fetch-dem.ts --source=copernicus && node scripts/fetch-osm.ts",
+    "data:build": "node scripts/build-dem.ts && node scripts/build-osm.ts",
+    "data:report": "node scripts/report.ts",
+    "data": "npm run data:fetch && npm run data:build && npm run data:report"
   },
   "dependencies": {
     "three": "^0.160.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.3",
     "@types/three": "^0.160.0",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
+    "geotiff": "^3.0.5",
     "globals": "^17.13.0",
     "prettier": "^3.9.9",
     "typescript": "^6.0.3",
