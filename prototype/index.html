@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bangkok Flood Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#dfe8ee; --panel:rgba(255,255,255,.88); --panel-solid:#fff; --ink:#15212b; --muted:#5b6b78;
+  --line:rgba(21,33,43,.12); --accent:#1f6fd1; --accent-soft:#e3eefb;
+  --rain:#3b82c4; --river:#0e9aa7; --sea:#7b5cc4; --north:#d9822b; --warn:#c2410c; --ok:#15803d;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e161d; --panel:rgba(20,29,37,.9); --panel-solid:#141d25; --ink:#e6edf2; --muted:#93a3b0;
+    --line:rgba(230,237,242,.12); --accent:#5aa2ff; --accent-soft:#1b2c40;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e161d; --panel:rgba(20,29,37,.9); --panel-solid:#141d25; --ink:#e6edf2; --muted:#93a3b0;
+  --line:rgba(230,237,242,.12); --accent:#5aa2ff; --accent-soft:#1b2c40;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans Thai",system-ui,sans-serif;font-size:14px;overflow:hidden}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block}
+#panel{position:fixed;top:12px;left:12px;bottom:12px;width:360px;background:var(--panel);
+  backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;overflow-y:auto;
+  padding:16px 16px 20px;z-index:5}
+h1{font-size:20px;margin:0 0 2px;line-height:1.3}
+.sub{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+h2{font-size:13px;text-transform:none;letter-spacing:.02em;color:var(--muted);margin:16px 0 8px;font-weight:600}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.presets button{font:inherit;font-size:12.5px;text-align:left;padding:8px 10px;border-radius:9px;
+  border:1px solid var(--line);background:var(--panel-solid);color:var(--ink);cursor:pointer;line-height:1.3}
+.presets button:hover{border-color:var(--accent)}
+.presets button.on{background:var(--accent-soft);border-color:var(--accent)}
+.ctl{margin:10px 0}
+.ctl .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ctl label{font-weight:500}
+.ctl .val{font-variant-numeric:tabular-nums;font-weight:600}
+.ctl .hint{color:var(--muted);font-size:11.5px;margin-top:1px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:4px 0 0}
+.toggles label{display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer}
+.toggles input{accent-color:var(--accent);width:16px;height:16px}
+.gauge{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel-solid)}
+.gauge .t{display:flex;justify-content:space-between;font-size:12.5px}
+.bar{position:relative;height:10px;background:var(--line);border-radius:6px;margin:8px 0 4px;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--river);border-radius:6px;transition:width .3s}
+.bar b{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel-solid)}
+.stat .k{font-size:11.5px;color:var(--muted)}
+.stat .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.causes{margin-top:8px}
+.cause{display:grid;grid-template-columns:92px 1fr 64px;align-items:center;gap:8px;font-size:12.5px;margin:4px 0}
+.cause .cb{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.cause .cb i{display:block;height:100%}
+.cause .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+#explain{margin:10px 0 0;padding:0;list-style:none}
+#explain li{font-size:12.8px;line-height:1.5;padding:7px 10px;border-left:3px solid var(--accent);
+  background:var(--accent-soft);border-radius:0 8px 8px 0;margin-bottom:6px}
+#explain li.warn{border-color:var(--warn)}
+#explain li.ok{border-color:var(--ok)}
+details{border-top:1px solid var(--line);margin-top:14px;padding-top:10px}
+summary{cursor:pointer;font-weight:600}
+details p{font-size:12.8px;line-height:1.6;margin:8px 0}
+.disc{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:14px}
+#topbar{position:fixed;top:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;z-index:5;max-width:calc(100% - 400px)}
+#topbar button{font:inherit;font-size:12.5px;padding:7px 11px;border-radius:9px;border:1px solid var(--line);
+  background:var(--panel);backdrop-filter:blur(8px);color:var(--ink);cursor:pointer}
+#topbar button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+#legend{position:fixed;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px;font-size:12px;z-index:5;backdrop-filter:blur(8px);min-width:200px}
+#legend .ramp{height:10px;border-radius:5px;margin:6px 0 3px}
+#legend .ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+#tip{position:fixed;pointer-events:none;background:var(--panel-solid);border:1px solid var(--line);
+  border-radius:9px;padding:7px 10px;font-size:12px;line-height:1.5;z-index:6;display:none;box-shadow:0 4px 18px rgba(0,0,0,.15)}
+#labels{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+.lbl{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font-size:11.5px;font-weight:600;
+  color:#15212b;background:rgba(255,255,255,.82);padding:2px 7px;border-radius:6px;border:1px solid rgba(0,0,0,.08)}
+.lbl.infra{background:#fff3e6;color:#9a3412}
+.lbl.big{background:none;border:none;font-size:15px;color:#2f5f8a;font-weight:700}
+.lbl.flow{background:#e9f7f8;color:#0b6b74}
+#clock{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:5;background:var(--panel);
+  border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;display:flex;align-items:center;gap:10px;font-size:12.5px}
+#clock button{font:inherit;font-size:12.5px;border:none;background:var(--accent);color:#fff;border-radius:999px;padding:5px 12px;cursor:pointer}
+@media (max-width:820px){
+  #panel{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:46vh}
+  #topbar{left:8px;right:8px;top:8px;max-width:none;justify-content:flex-start}
+  #legend{display:none}
+  #clock{bottom:calc(46vh + 16px)}
+}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="labels"></div>
+<div id="tip"></div>
+
+<aside id="panel">
+  <h1>ทำไมกรุงเทพฯ น้ำท่วม?</h1>
+  <p class="sub">แบบจำลอง 3 มิติเพื่อการเรียนรู้ อิงภูมิประเทศจริงแบบประมาณ ลองปรับ "น้ำ 3 น้ำ" แล้วดูผล</p>
+
+  <h2>สถานการณ์ตัวอย่าง</h2>
+  <div class="presets" id="presets"></div>
+
+  <h2>ปัจจัยที่ทำให้น้ำท่วม</h2>
+  <div class="ctl"><div class="row"><label><span class="dot" style="background:var(--rain)"></span>น้ำฝน</label><span class="val" id="v-rain"></span></div>
+    <input type="range" id="rain" min="0" max="150" step="5"><div class="hint">ความแรงฝน (มม./ชม.) · ท่อระบายออกแบบรับได้ราว 60</div></div>
+  <div class="ctl"><div class="row"><label>ฝนตกนาน</label><span class="val" id="v-dur"></span></div>
+    <input type="range" id="dur" min="1" max="6" step="0.5"></div>
+  <div class="ctl"><div class="row"><label><span class="dot" style="background:var(--north)"></span>น้ำเหนือ</label><span class="val" id="v-flow"></span></div>
+    <input type="range" id="flow" min="500" max="5000" step="100"><div class="hint">น้ำไหลผ่านเจ้าพระยา (ลบ.ม./วินาที) · เกิน ~3,000 เริ่มอันตราย</div></div>
+  <div class="ctl"><div class="row"><label><span class="dot" style="background:var(--sea)"></span>น้ำทะเลหนุน</label><span class="val" id="v-tide"></span></div>
+    <input type="range" id="tide" min="0.5" max="2.6" step="0.05"><div class="hint">ระดับน้ำทะเลขึ้นสูงสุด (ม.รทก.) · ช่วง ต.ค.–พ.ย. หนุนสูงสุดของปี</div></div>
+  <div class="ctl"><div class="row"><label>แผ่นดินทรุดเพิ่ม</label><span class="val" id="v-subs"></span></div>
+    <input type="range" id="subs" min="0" max="100" step="5"><div class="hint">ทรุดมากทางตะวันออกและชายฝั่ง ทำให้พื้นและเขื่อนต่ำลง</div></div>
+
+  <h2>ระบบป้องกัน</h2>
+  <div class="toggles">
+    <label><input type="checkbox" id="walls"> แนวเขื่อนริมเจ้าพระยา (สูง ~2.8 ม.)</label>
+    <label><input type="checkbox" id="dikes"> คันกั้นน้ำ (ตะวันออก/ชายฝั่ง/สุวรรณภูมิ)</label>
+    <label><input type="checkbox" id="drains"> สถานีสูบน้ำ + อุโมงค์ระบายน้ำ</label>
+  </div>
+
+  <h2>ผลลัพธ์</h2>
+  <div class="gauge">
+    <div class="t"><span>ระดับน้ำเจ้าพระยา (ปากคลองตลาด)</span><b id="g-river"></b></div>
+    <div class="bar"><i id="g-fill"></i><b id="g-wall"></b></div>
+    <div class="t" style="color:var(--muted);font-size:11.5px"><span>0</span><span id="g-walltxt"></span><span>4 ม.</span></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">พื้นที่น้ำท่วม (&gt;10 ซม.)</div><div class="v" id="s-area">–</div></div>
+    <div class="stat"><div class="k">ท่วมลึกเกิน 50 ซม.</div><div class="v" id="s-deep">–</div></div>
+  </div>
+  <div class="causes" id="causes"></div>
+  <ul id="explain"></ul>
+
+  <details>
+    <summary>เรียนรู้: น้ำ 3 น้ำ + แผ่นดินทรุด</summary>
+    <p><b>น้ำฝน</b> – เมื่อฝนตกแรงกว่าที่ท่อและคลองระบายได้ น้ำจะขังในจุดต่ำ พื้นคอนกรีตทำให้น้ำซึมลงดินไม่ได้ ต่างจากพื้นที่สีเขียวอย่างบางกระเจ้า</p>
+    <p><b>น้ำเหนือ</b> – น้ำจากลุ่มเจ้าพระยาตอนบนไหลผ่านกรุงเทพฯ ลงทะเล ถ้ามามากจนเกินแนวเขื่อน หรือไหลบ่ามาทางทุ่งด้านเหนือ (แบบปี 2554) จะท่วมจากเหนือลงใต้</p>
+    <p><b>น้ำทะเลหนุน</b> – ช่วงน้ำขึ้น ระดับทะเลดันน้ำในแม่น้ำให้สูงขึ้น และทำให้ระบายน้ำลงทะเลช้าลง ถ้ามาพร้อมน้ำเหนือ ระดับน้ำในเมืองจะสูงที่สุด</p>
+    <p><b>แผ่นดินทรุด</b> – กรุงเทพฯ สูงจากระดับทะเลเพียง 0–2 ม. การสูบน้ำบาดาลในอดีตทำให้พื้นทรุด เขื่อนและคันกั้นน้ำทรุดตาม จึงกันน้ำได้น้อยลงเรื่อย ๆ</p>
+  </details>
+  <p class="disc">⚠️ แบบจำลองเพื่อการศึกษา ไม่ใช่การพยากรณ์ · ความสูงพื้นที่ แนวเขื่อน และตำแหน่งต่าง ๆ เป็นค่าประมาณจากข้อมูลสาธารณะ · ใช้วิธีเติมน้ำตามความสูงพื้นที่ (bathtub) ที่ลดระดับตามระยะทาง ไม่ใช่การคำนวณการไหลจริง · ความสูงตึกขยายเกินจริงเพื่อให้เห็นชัด</p>
+</aside>
+
+<div id="topbar">
+  <button data-view="real" class="on">ภาพเมือง</button>
+  <button data-view="elev">แผนที่ความสูง</button>
+  <button id="btn-labels" class="on">ป้ายชื่อ</button>
+  <button data-cam="all">ทั้งเมือง</button>
+  <button data-cam="core">ใจกลางเมือง</button>
+  <button data-cam="mouth">ปากแม่น้ำ</button>
+  <button data-cam="east">ฝั่งตะวันออก</button>
+</div>
+
+<div id="legend"></div>
+<div id="clock"><span id="clock-t">กำลังจำลอง…</span><button id="replay">▶ เล่นใหม่</button></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ================= Geography (approximate) ================= */
+const LAT0=13.46, LAT1=13.96, LON0=100.32, LON1=100.92;
+const NX=200, NZ=168, N=NX*NZ;
+const S=100, VEX=0.6;
+const LATC=(LAT0+LAT1)/2, LONC=(LON0+LON1)/2;
+const lonAt=i=>LON0+(LON1-LON0)*i/(NX-1);
+const latAt=j=>LAT1-(LAT1-LAT0)*j/(NZ-1);
+const wx=lon=>(lon-LONC)*S, wz=lat=>(LATC-lat)*S;
+const CELL=(LON1-LON0)/(NX-1)*S; // world size of a cell
+const CELL_KM2=((LON1-LON0)/(NX-1)*108.1)*((LAT1-LAT0)/(NZ-1)*110.6);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const sstep=t=>t*t*(3-2*t);
+
+// Chao Phraya (north → mouth), lat/lon approximate
+const RIVER=[[13.965,100.505],[13.93,100.50],[13.90,100.505],[13.87,100.495],[13.845,100.495],[13.82,100.51],[13.80,100.515],
+ [13.785,100.505],[13.77,100.497],[13.755,100.49],[13.742,100.492],[13.73,100.505],[13.72,100.512],[13.705,100.515],[13.69,100.515],
+ [13.68,100.522],[13.685,100.54],[13.698,100.553],[13.705,100.567],[13.698,100.58],[13.682,100.585],[13.668,100.575],[13.66,100.56],
+ [13.658,100.545],[13.65,100.535],[13.635,100.535],[13.615,100.55],[13.60,100.57],[13.58,100.588],[13.555,100.595],[13.53,100.593],[13.49,100.59]];
+const CANALS=[
+ [[13.750,100.540],[13.748,100.57],[13.755,100.60],[13.765,100.64],[13.78,100.70],[13.80,100.75],[13.83,100.82],[13.86,100.90]], // แสนแสบ
+ [[13.86,100.62],[13.82,100.605],[13.78,100.60],[13.755,100.60]], // ลาดพร้าว
+ [[13.96,100.55],[13.90,100.555],[13.85,100.54],[13.81,100.53]], // เปรมประชากร
+ [[13.762,100.487],[13.77,100.46],[13.78,100.44],[13.79,100.40]], // บางกอกน้อย
+ [[13.718,100.488],[13.715,100.45],[13.71,100.40],[13.705,100.33]], // ภาษีเจริญ
+ [[13.70,100.60],[13.71,100.66],[13.72,100.74],[13.73,100.90]], // ประเวศบุรีรมย์
+];
+const KING_DIKE=[[13.97,100.69],[13.90,100.70],[13.84,100.71],[13.78,100.72],[13.73,100.725],[13.68,100.715],[13.62,100.70],[13.57,100.69]];
+const SUVARNA={lat:13.69,lon:100.75,r:0.022};
+const coastLat=lon=>13.505+0.008*Math.sin((lon-100.3)*9)+(lon>100.6?0.025*(lon-100.6)/0.32:0);
+
+const DISTRICTS=[['พระนคร',13.756,100.50],['ดุสิต',13.777,100.52],['บางรัก',13.73,100.525],['ปทุมวัน',13.744,100.53],['ราชเทวี',13.758,100.535],
+['พญาไท',13.78,100.54],['จตุจักร',13.83,100.56],['บางซื่อ',13.81,100.53],['ดอนเมือง',13.92,100.59],['หลักสี่',13.89,100.58],['บางเขน',13.87,100.60],
+['สายไหม',13.92,100.65],['ลาดพร้าว',13.82,100.61],['บางกะปิ',13.77,100.64],['บึงกุ่ม',13.80,100.66],['มีนบุรี',13.81,100.73],['คลองสามวา',13.86,100.74],
+['หนองจอก',13.85,100.86],['ลาดกระบัง',13.72,100.78],['ประเวศ',13.70,100.69],['สวนหลวง',13.73,100.65],['บางนา',13.67,100.62],['พระโขนง',13.70,100.60],
+['คลองเตย',13.71,100.57],['วัฒนา',13.74,100.58],['สาทร',13.71,100.53],['ยานนาวา',13.69,100.54],['บางคอแหลม',13.69,100.50],['ธนบุรี',13.72,100.48],
+['คลองสาน',13.73,100.51],['บางกอกน้อย',13.77,100.47],['บางพลัด',13.79,100.49],['ตลิ่งชัน',13.78,100.44],['ภาษีเจริญ',13.71,100.43],['บางแค',13.70,100.40],
+['หนองแขม',13.70,100.35],['ราษฎร์บูรณะ',13.67,100.50],['ทุ่งครุ',13.61,100.50],['จอมทอง',13.68,100.47],['บางขุนเทียน',13.58,100.43],['บางบอน',13.66,100.40],
+['ดินแดง',13.77,100.56],['ห้วยขวาง',13.78,100.58],['วังทองหลาง',13.78,100.61],['นนทบุรี',13.86,100.49],['สมุทรปราการ',13.60,100.60],['พระประแดง',13.66,100.53],
+['บางพลี',13.62,100.72],['บางกระเจ้า',13.675,100.565]];
+
+function distPoly(lat,lon,poly){
+  let best=1e9,bt=0,acc=0,total=0;
+  const segs=[];
+  for(let k=0;k<poly.length-1;k++){const a=poly[k],b=poly[k+1];const L=Math.hypot(b[0]-a[0],b[1]-a[1]);segs.push(L);total+=L;}
+  for(let k=0;k<poly.length-1;k++){
+    const a=poly[k],b=poly[k+1],dy=b[0]-a[0],dx=b[1]-a[1];const L2=dx*dx+dy*dy;
+    let t=((lon-a[1])*dx+(lat-a[0])*dy)/L2;t=clamp(t,0,1);
+    const d=Math.hypot(lon-(a[1]+t*dx),lat-(a[0]+t*dy));
+    if(d<best){best=d;bt=(acc+t*segs[k])/total;}
+    acc+=segs[k];
+  }
+  return {d:best,t:bt};
+}
+function hash(x,y){const h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h);}
+function vnoise(x,y){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi;const u=sstep(xf),v=sstep(yf);
+  const a=hash(xi,yi),b=hash(xi+1,yi),c=hash(xi,yi+1),d=hash(xi+1,yi+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
+const fbm=(lat,lon)=>0.6*vnoise(lon*60,lat*60)+0.4*vnoise(lon*160,lat*160);
+const gauss=(lat,lon,la,lo,s)=>Math.exp(-(((lat-la)/s)**2+((lon-lo)/s)**2));
+function urbanAt(lat,lon){
+  if(gauss(lat,lon,13.675,100.565,0.014)>0.4) return 0.05; // บางกระเจ้า
+  return Math.max(gauss(lat,lon,13.745,100.535,0.055),0.8*gauss(lat,lon,13.83,100.565,0.05),0.7*gauss(lat,lon,13.72,100.475,0.04),
+    0.6*gauss(lat,lon,13.675,100.615,0.035),0.6*gauss(lat,lon,13.76,100.625,0.035),0.5*gauss(lat,lon,13.90,100.60,0.03),
+    0.6*gauss(lat,lon,13.86,100.51,0.03),0.5*gauss(lat,lon,13.60,100.60,0.03));
+}
+
+/* ================= Grid build ================= */
+const kind=new Uint8Array(N);     // 0 land, 1 river, 2 sea
+const h0=new Float32Array(N);     // base elevation m MSL
+const hEff=new Float32Array(N);
+const subW=new Float32Array(N);
+const riverS=new Float32Array(N); // 0 mouth .. 1 north
+const wallType=new Uint8Array(N); // 1 river wall, 2 king dike, 3 coastal dike, 4 airport dike
+const wallBase=new Float32Array(N);
+const urban=new Float32Array(N);
+const intertidal=new Uint8Array(N);
+const pond=new Float32Array(N);
+const idx=(i,j)=>j*NX+i;
+
+for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){
+  const c=idx(i,j),lat=latAt(j),lon=lonAt(i);
+  const cl=coastLat(lon);
+  const r=distPoly(lat,lon,RIVER);
+  urban[c]=urbanAt(lat,lon);
+  subW[c]=clamp(0.5+0.9*clamp((lon-100.60)/0.25,0,1)+0.5*clamp((13.70-lat)/0.2,0,1),0.4,1.6);
+  if(lat<cl){kind[c]=2;h0[c]=-1.6;continue;}
+  if(r.d<0.0042){kind[c]=1;h0[c]=-1.5;riverS[c]=1-r.t;continue;}
+  let h=1.25+2.4*Math.max(0,lat-13.80);
+  if(lon>100.66) h-=(lon-100.66)*2.8;
+  if(lon<100.45) h-=(100.45-lon)*1.6;
+  h+=0.6*Math.exp(-(((lat-13.915)/0.03)**2+((lon-100.60)/0.04)**2));
+  h+=0.45*Math.exp(-((r.d/0.012)**2));
+  h+=0.25*gauss(lat,lon,13.752,100.50,0.02);
+  h+=(fbm(lat,lon)-0.5)*0.32;
+  const d=lat-cl;
+  if(d<0.07){const t=Math.max(0,d)/0.07;h=0.25+(h-0.25)*sstep(t);}
+  h0[c]=h;
+  if(d<0.012) intertidal[c]=1;
+}
+// walls & dikes
+for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){
+  const c=idx(i,j);if(kind[c])continue;
+  const lat=latAt(j),lon=lonAt(i);
+  let bank=false;
+  for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=NX||jj>=NZ)continue;if(kind[idx(ii,jj)]===1)bank=true;}
+  if(bank){wallType[c]=1;wallBase[c]=(lat>13.60&&lat<13.87)?2.8:2.4;continue;}
+  if(distPoly(lat,lon,KING_DIKE).d<0.0022){wallType[c]=2;wallBase[c]=3.0;continue;}
+  const cd=lat-coastLat(lon);
+  if(cd>0.0105&&cd<0.0145&&Math.abs(lon-100.592)>0.012){wallType[c]=3;wallBase[c]=1.8;continue;}
+  const ad=Math.hypot(lat-SUVARNA.lat,lon-SUVARNA.lon);
+  if(Math.abs(ad-SUVARNA.r)<0.0018){wallType[c]=4;wallBase[c]=3.5;}
+}
+// pond factor: how much lower than surroundings (blur radius 6)
+{
+  const tmp=new Float32Array(N),bl=new Float32Array(N),R=6;
+  for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){let s=0,n=0;for(let k=-R;k<=R;k++){const ii=i+k;if(ii<0||ii>=NX)continue;const c=idx(ii,j);if(kind[c])continue;s+=h0[c];n++;}tmp[idx(i,j)]=n?s/n:0;}
+  for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){let s=0,n=0;for(let k=-R;k<=R;k++){const jj=j+k;if(jj<0||jj>=NZ)continue;const c=idx(i,jj);if(kind[c])continue;s+=tmp[c];n++;}bl[idx(i,j)]=n?s/n:0;}
+  for(let c=0;c<N;c++) pond[c]=kind[c]?0:clamp(1+(bl[c]-h0[c])*4,0.25,3.5)*(0.55+0.7*urban[c]);
+}
+let PKT_S=0.63;{const r=distPoly(13.742,100.492,RIVER);PKT_S=1-r.t;}
+
+/* ================= Simulation ================= */
+const P={rain:0,dur:2,flow:1000,tide:1.0,subs:0,walls:true,dikes:true,drains:true};
+const reach=new Float32Array(N),arrival=new Float32Array(N),src=new Uint8Array(N);
+const tExt=new Float32Array(N),tRain=new Float32Array(N),cur=new Float32Array(N),obst=new Float32Array(N);
+let SIM={};
+
+const riverLevel=s=>P.tide*(1-0.3*s)+Math.pow(P.flow/1000,1.2)*0.28*(0.2+s);
+const wallTop=c=>wallBase[c]-(P.subs/100)*subW[c];
+
+class Heap{constructor(){this.k=[];this.v=[];this.n=0;}
+  push(key,val){let i=this.n++;const k=this.k,v=this.v;while(i>0){const p=(i-1)>>1;if(k[p]>=key)break;k[i]=k[p];v[i]=v[p];i=p;}k[i]=key;v[i]=val;}
+  pop(){const k=this.k,v=this.v,top=v[0];const n=--this.n;const lk=k[n],lv=v[n];let i=0;
+    while(true){const l=2*i+1;if(l>=n)break;const r=l+1;const m=(r<n&&k[r]>k[l])?r:l;if(k[m]<=lk)break;k[i]=k[m];v[i]=v[m];i=m;}
+    k[i]=lk;v[i]=lv;return top;}}
+
+function simulate(){
+  const sub=P.subs/100;
+  for(let c=0;c<N;c++){
+    hEff[c]=kind[c]?h0[c]:h0[c]-sub*subW[c];
+    let ob=hEff[c];const w=wallType[c];
+    if(w===1&&P.walls) ob=Math.max(ob,wallTop(c));
+    if(w>=2&&P.dikes) ob=Math.max(ob,wallTop(c));
+    obst[c]=ob;reach[c]=-1e9;arrival[c]=0;src[c]=0;
+  }
+  const H=new Heap();
+  for(let c=0;c<N;c++){
+    if(kind[c]===1){reach[c]=riverLevel(riverS[c]);src[c]=1;H.push(reach[c],c);}
+    else if(kind[c]===2){reach[c]=P.tide;src[c]=2;H.push(reach[c],c);}
+  }
+  const north=P.flow>2800?1.75+(P.flow-2800)/1000*0.6:-1e9;
+  for(let i=0;i<NX;i++){const c=idx(i,0);if(!kind[c]&&north>obst[c]){reach[c]=north;src[c]=3;H.push(north,c);}}
+  const LOSS=0.03;
+  while(H.n){
+    const c=H.pop();const i=c%NX,j=(c/NX)|0,rc=reach[c];
+    for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){
+      if(!di&&!dj)continue;const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=NX||jj>=NZ)continue;
+      const n=idx(ii,jj);if(kind[n])continue;
+      const step=(di&&dj)?1.414:1;const cand=rc-LOSS*step;
+      if(cand>obst[n]&&cand>reach[n]){reach[n]=cand;arrival[n]=arrival[c]+step;src[n]=src[c];H.push(cand,n);}
+    }
+  }
+  const riverMid=riverLevel(PKT_S);
+  const cap=(P.drains?60:25)*clamp(1-Math.max(0,riverMid-1.6)*0.5-Math.max(0,P.tide-1.4)*0.4,0.35,1);
+  const excess=Math.max(0,P.rain-cap)*P.dur; // mm
+  // stats
+  let area=0,deep=0;const by=[0,0,0,0];let landCells=0;
+  for(let c=0;c<N;c++){
+    if(kind[c]){tExt[c]=reach[c]-hEff[c];tRain[c]=0;continue;}
+    const e=reach[c]>hEff[c]?reach[c]-hEff[c]:0;
+    const r=excess/1000*pond[c];
+    tExt[c]=e;tRain[c]=e>0?r*0.3:r;
+    if(intertidal[c])continue;
+    landCells++;
+    const d=tExt[c]+tRain[c];
+    if(d>0.1){area++;by[e>0?src[c]:0]++;}
+    if(d>0.5)deep++;
+  }
+  // max overtop on core walls
+  let coreWall=2.8-sub*0.55;
+  SIM={riverMid,cap,excess,area:area*CELL_KM2,deep:deep*CELL_KM2,by:by.map(x=>x*CELL_KM2),land:landCells*CELL_KM2,coreWall,north};
+}
+
+/* ================= Three.js scene ================= */
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+const dark=()=>document.documentElement.dataset.theme==='dark'||(document.documentElement.dataset.theme!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);
+function applyBg(){const col=dark()?0x0e161d:0xdfe8ee;scene.background=new THREE.Color(col);scene.fog=new THREE.Fog(col,90,190);}
+applyBg();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyBg);
+const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,500);
+camera.position.set(-6,46,48);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(2,0,0);controls.enableDamping=true;controls.maxPolarAngle=1.38;controls.minDistance=4;controls.maxDistance=130;
+scene.add(new THREE.HemisphereLight(0xeef6ff,0x8a7d63,1.1));
+const sun=new THREE.DirectionalLight(0xffffff,1.5);sun.position.set(-30,60,25);scene.add(sun);
+
+function gridGeometry(){
+  const g=new THREE.BufferGeometry();
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const c=idx(i,j);pos[c*3]=wx(lonAt(i));pos[c*3+2]=wz(latAt(j));}
+  const ind=new Uint32Array((NX-1)*(NZ-1)*6);let k=0;
+  for(let j=0;j<NZ-1;j++)for(let i=0;i<NX-1;i++){const a=idx(i,j),b=idx(i+1,j),c=idx(i,j+1),d=idx(i+1,j+1);ind[k++]=a;ind[k++]=c;ind[k++]=b;ind[k++]=b;ind[k++]=c;ind[k++]=d;}
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  g.setIndex(new THREE.BufferAttribute(ind,1));
+  return g;
+}
+const terrGeo=gridGeometry();
+const terrain=new THREE.Mesh(terrGeo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95,metalness:0}));
+scene.add(terrain);
+const waterGeo=gridGeometry();
+{const nrm=new Float32Array(N*3);for(let c=0;c<N;c++)nrm[c*3+1]=1;waterGeo.setAttribute('normal',new THREE.BufferAttribute(nrm,3));}
+const water=new THREE.Mesh(waterGeo,new THREE.MeshStandardMaterial({vertexColors:true,transparent:true,opacity:0.84,roughness:0.3,metalness:0.05,depthWrite:false}));
+water.renderOrder=2;scene.add(water);
+// base block
+{const w=wx(LON1)-wx(LON0),d=wz(LAT0)-wz(LAT1);
+ const base=new THREE.Mesh(new THREE.BoxGeometry(w,2,d),new THREE.MeshStandardMaterial({color:0x5b5246,roughness:1}));
+ base.position.set(0,-1.6*VEX-1.0,0);scene.add(base);}
+
+let viewMode='real';
+const C=(hex)=>new THREE.Color(hex);
+const COL={urban:C(0xcfc8bb),sub:C(0xb8c49a),green:C(0x7fa865),rice:C(0xb9c78a),mangrove:C(0x5a8a58),bed:C(0x7b6c55),wet:C(0x9fb58a)};
+const ELEV=[[-0.5,C(0x5b2a86)],[0.25,C(0x6b46c1)],[0.75,C(0x2f80ed)],[1.25,C(0x22a39f)],[1.75,C(0x7cc36b)],[2.25,C(0xe9c46a)],[3,C(0xe07a3f)]];
+function elevColor(h,out){if(h<=ELEV[0][0])return out.copy(ELEV[0][1]);for(let k=1;k<ELEV.length;k++){if(h<=ELEV[k][0]){const t=(h-ELEV[k-1][0])/(ELEV[k][0]-ELEV[k-1][0]);return out.copy(ELEV[k-1][1]).lerp(ELEV[k][1],t);}}return out.copy(ELEV[ELEV.length-1][1]);}
+function updateTerrain(){
+  const pos=terrGeo.attributes.position.array,col=terrGeo.attributes.color.array,tc=new THREE.Color();
+  for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){
+    const c=idx(i,j),lat=latAt(j),lon=lonAt(i);
+    pos[c*3+1]=hEff[c]*VEX;
+    if(kind[c]) tc.copy(COL.bed);
+    else if(viewMode==='elev') elevColor(hEff[c],tc);
+    else{
+      const u=urban[c];
+      tc.copy(lon>100.73||lon<100.40?COL.rice:COL.sub).lerp(COL.urban,clamp(u*1.4,0,1));
+      if(gauss(lat,lon,13.675,100.565,0.016)>0.35) tc.copy(COL.green);
+      if(intertidal[c]||lat-coastLat(lon)<0.02) tc.copy(COL.mangrove);
+      if(hEff[c]<0.6) tc.lerp(COL.wet,0.4);
+      const n=(fbm(lat*2,lon*2)-0.5)*0.08;tc.offsetHSL(0,0,n);
+    }
+    col[c*3]=tc.r;col[c*3+1]=tc.g;col[c*3+2]=tc.b;
+  }
+  terrGeo.attributes.position.needsUpdate=true;terrGeo.attributes.color.needsUpdate=true;terrGeo.computeVertexNormals();
+  updateWalls();updateCanals();
+}
+
+// walls instanced
+const wallCells=[];for(let c=0;c<N;c++)if(wallType[c])wallCells.push(c);
+const walls=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1).translate(0,0.5,0),new THREE.MeshStandardMaterial({roughness:0.8}),wallCells.length);
+scene.add(walls);
+const WCOL={1:C(0x9aa3ab),2:C(0x8a6a44),3:C(0x6f7b4a),4:C(0x8a6a44)};
+function updateWalls(){
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(),p=new THREE.Vector3();
+  wallCells.forEach((c,k)=>{
+    const i=c%NX,j=(c/NX)|0,w=wallType[c];
+    const on=(w===1?P.walls:P.dikes);
+    const top=wallTop(c),base=hEff[c];
+    const hh=on?Math.max(0.02,(top-base)*VEX):0.0001;
+    p.set(wx(lonAt(i)),base*VEX,wz(latAt(j)));s.set(CELL*1.02,hh,CELL*1.02);
+    m.compose(p,q,s);walls.setMatrixAt(k,m);walls.setColorAt(k,WCOL[w]);
+  });
+  walls.instanceMatrix.needsUpdate=true;if(walls.instanceColor)walls.instanceColor.needsUpdate=true;
+}
+
+// canals as ribbons
+const canalGroup=new THREE.Group();scene.add(canalGroup);
+const canalMat=new THREE.MeshStandardMaterial({color:0x3c8fb0,roughness:0.4});
+function cellAt(lat,lon){const i=clamp(Math.round((lon-LON0)/(LON1-LON0)*(NX-1)),0,NX-1),j=clamp(Math.round((LAT1-lat)/(LAT1-LAT0)*(NZ-1)),0,NZ-1);return idx(i,j);}
+function updateCanals(){
+  canalGroup.clear();
+  for(const poly of CANALS){
+    const pts=[];
+    for(let k=0;k<poly.length-1;k++){const a=poly[k],b=poly[k+1];const n=Math.ceil(Math.hypot(a[0]-b[0],a[1]-b[1])/0.002);
+      for(let t=0;t<n;t++){const la=a[0]+(b[0]-a[0])*t/n,lo=a[1]+(b[1]-a[1])*t/n;pts.push(new THREE.Vector3(wx(lo),hEff[cellAt(la,lo)]*VEX+0.03,wz(la)));}}
+    const pos=[],ind=[];
+    for(let k=0;k<pts.length;k++){const a=pts[Math.max(0,k-1)],b=pts[Math.min(pts.length-1,k+1)];
+      const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=-dz/L*0.09,nz=dx/L*0.09;
+      pos.push(pts[k].x+nx,pts[k].y,pts[k].z+nz,pts[k].x-nx,pts[k].y,pts[k].z-nz);
+      if(k<pts.length-1){const o=k*2;ind.push(o,o+2,o+1,o+1,o+2,o+3);}}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(ind);g.computeVertexNormals();
+    canalGroup.add(new THREE.Mesh(g,canalMat));
+  }
+}
+
+// buildings
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rnd=mulberry(42);
+const bData=[];
+for(let tries=0;tries<40000&&bData.length<2800;tries++){
+  const lat=LAT0+rnd()*(LAT1-LAT0),lon=LON0+rnd()*(LON1-LON0);
+  const c=cellAt(lat,lon);if(kind[c]||wallType[c]||intertidal[c])continue;
+  const u=urban[c];if(rnd()>u*0.9)continue;
+  const tall=gauss(lat,lon,13.724,100.530,0.012)+gauss(lat,lon,13.737,100.560,0.012)+gauss(lat,lon,13.758,100.566,0.01)+
+    gauss(lat,lon,13.722,100.513,0.008)+gauss(lat,lon,13.752,100.540,0.01)+0.4*gauss(lat,lon,13.82,100.56,0.02);
+  const m=12+rnd()*25*u+Math.min(1,tall)*rnd()*230;
+  bData.push({c,x:wx(lon),z:wz(lat),hu:0.22+m*0.009,w:0.1+rnd()*0.18,d:0.1+rnd()*0.18,shade:0.78+rnd()*0.2});
+}
+const bMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1).translate(0,0.5,0),new THREE.MeshStandardMaterial({roughness:0.7}),bData.length);
+scene.add(bMesh);
+function updateBuildings(){const m=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(),p=new THREE.Vector3(),col=new THREE.Color();
+  bData.forEach((b,k)=>{p.set(b.x,hEff[b.c]*VEX,b.z);s.set(b.w,b.hu,b.d);m.compose(p,q,s);bMesh.setMatrixAt(k,m);
+    col.setRGB(b.shade,b.shade*0.99,b.shade*0.96);bMesh.setColorAt(k,col);});
+  bMesh.instanceMatrix.needsUpdate=true;bMesh.instanceColor.needsUpdate=true;}
+
+// infrastructure: pumps & tunnel
+const infra=new THREE.Group();scene.add(infra);
+const PUMPS=[[13.695,100.597],[13.706,100.556],[13.752,100.548],[13.80,100.535],[13.73,100.488]];
+const pumpMeshes=PUMPS.map(([la,lo])=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,0.5,16),new THREE.MeshStandardMaterial({color:0xd94b2b}));m.userData={la,lo};infra.add(m);return m;});
+const tunnelPts=[[13.752,100.548],[13.735,100.552],[13.716,100.555],[13.706,100.556]].map(([la,lo])=>new THREE.Vector3(wx(lo),0,wz(la)));
+const tunnel=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(tunnelPts),20,0.12,8),new THREE.MeshStandardMaterial({color:0xf59e0b,transparent:true,opacity:0.85}));
+infra.add(tunnel);
+function updateInfra(){pumpMeshes.forEach(m=>{const c=cellAt(m.userData.la,m.userData.lo);m.position.set(wx(m.userData.lo),Math.max(hEff[c],1)*VEX+0.25,wz(m.userData.la));});
+  tunnel.position.y=1.1*VEX;infra.visible=P.drains;}
+
+// rain
+const RMAX=9000;
+const rainGeo=new THREE.BufferGeometry();const rp=new Float32Array(RMAX*3);
+for(let k=0;k<RMAX;k++){rp[k*3]=(rnd()-0.5)*60;rp[k*3+1]=rnd()*20;rp[k*3+2]=(rnd()-0.5)*50;}
+rainGeo.setAttribute('position',new THREE.BufferAttribute(rp,3));
+const rain=new THREE.Points(rainGeo,new THREE.PointsMaterial({color:0x7fb2e5,size:0.09,transparent:true,opacity:0.75}));scene.add(rain);
+
+// river flow particles
+const rWorld=RIVER.map(([la,lo])=>new THREE.Vector3(wx(lo),0,wz(la)));
+const rLen=[0];for(let k=1;k<rWorld.length;k++)rLen.push(rLen[k-1]+rWorld[k].distanceTo(rWorld[k-1]));
+const RTOT=rLen[rLen.length-1];
+function riverPoint(u,out){const d=u*RTOT;let k=1;while(k<rLen.length-1&&rLen[k]<d)k++;const t=(d-rLen[k-1])/(rLen[k]-rLen[k-1]);out.lerpVectors(rWorld[k-1],rWorld[k],clamp(t,0,1));return k;}
+const FMAX=700;const flowU=new Float32Array(FMAX),flowOff=new Float32Array(FMAX);
+for(let k=0;k<FMAX;k++){flowU[k]=rnd();flowOff[k]=(rnd()-0.5)*0.5;}
+const flowGeo=new THREE.BufferGeometry();flowGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(FMAX*3),3));
+const flowPts=new THREE.Points(flowGeo,new THREE.PointsMaterial({color:0xffffff,size:0.12,transparent:true,opacity:0.8}));flowPts.renderOrder=3;scene.add(flowPts);
+
+/* ================= Water display ================= */
+const WC={river:C(0x2b7fa8),sea:C(0x2a6c9c),shallow:C(0x9fd3e0),mid:C(0x3f8fd0),deep:C(0x1c3f8f),muddy:C(0xa58a5c)};
+let simT=0;
+function updateWater(dt){
+  simT+=dt;
+  const pos=waterGeo.attributes.position.array,col=waterGeo.attributes.color.array,tc=new THREE.Color();
+  const rainK=Math.min(1,simT/3);const k=Math.min(1,dt*2.5);
+  for(let c=0;c<N;c++){
+    let tgt;
+    if(kind[c]) tgt=tExt[c];
+    else tgt=(tExt[c]>0&&simT>=arrival[c]*0.05?tExt[c]:0)+tRain[c]*rainK;
+    cur[c]+=(tgt-cur[c])*k;
+    const d=cur[c];
+    if(kind[c]){pos[c*3+1]=(hEff[c]+d)*VEX;tc.copy(kind[c]===1?WC.river:WC.sea);}
+    else if(d>0.02){pos[c*3+1]=(hEff[c]+d)*VEX+0.01;
+      if(d<0.3)tc.copy(WC.shallow).lerp(WC.mid,d/0.3);else if(d<1)tc.copy(WC.mid).lerp(WC.deep,(d-0.3)/0.7);else tc.copy(WC.deep);
+      tc.lerp(WC.muddy,0.15);}
+    else{pos[c*3+1]=hEff[c]*VEX-0.1;tc.copy(WC.shallow);}
+    col[c*3]=tc.r;col[c*3+1]=tc.g;col[c*3+2]=tc.b;
+  }
+  waterGeo.attributes.position.needsUpdate=true;waterGeo.attributes.color.needsUpdate=true;
+  const maxArr=SIM.maxArr||0;
+  document.getElementById('clock-t').textContent=simT<Math.max(3.5,maxArr*0.05+1)?'กำลังจำลอง… น้ำกำลังเคลื่อนตัว':'ถึงจุดสมดุลแล้ว';
+}
+
+/* ================= Labels ================= */
+const LABELS=[
+ ['พระบรมมหาราชวัง',13.750,100.491],['อนุสาวรีย์ชัยฯ',13.765,100.538],['สยาม',13.746,100.534],['สีลม–สาทร',13.724,100.530],
+ ['จตุจักร',13.80,100.553],['ดอนเมือง',13.912,100.607],['สุวรรณภูมิ',13.69,100.75],['บางกระเจ้า',13.675,100.565],['นนทบุรี',13.86,100.475],
+ ['สมุทรปราการ',13.598,100.615],['บางขุนเทียน',13.56,100.43],['หนองจอก (พื้นที่รับน้ำ)',13.86,100.84],
+ ['อ่าวไทย',13.478,100.55,'big'],['แม่น้ำเจ้าพระยา',13.83,100.50,'flow'],['↓ น้ำเหนือ',13.95,100.505,'flow'],['↑ น้ำทะเลหนุน',13.50,100.64,'flow'],
+ ['สถานีสูบน้ำพระโขนง',13.695,100.597,'infra'],['อุโมงค์ระบายน้ำ',13.735,100.552,'infra'],['คันกั้นน้ำพระราชดำริ',13.80,100.716,'infra'],
+];
+const labelBox=document.getElementById('labels');
+const labelEls=LABELS.map(([n,la,lo,cls])=>{const e=document.createElement('div');e.className='lbl '+(cls||'');e.textContent=n;labelBox.appendChild(e);return {e,la,lo,cls};});
+let showLabels=true;const vtmp=new THREE.Vector3();
+function updateLabels(){
+  labelBox.style.display=showLabels?'block':'none';if(!showLabels)return;
+  for(const L of labelEls){
+    if(L.cls==='infra'&&!P.drains&&!L.e.textContent.startsWith('คัน')){L.e.style.display='none';continue;}
+    if(L.e.textContent.startsWith('คัน')&&!P.dikes){L.e.style.display='none';continue;}
+    const c=cellAt(L.la,L.lo);vtmp.set(wx(L.lo),Math.max(hEff[c]+cur[c],0.5)*VEX+0.6,wz(L.la)).project(camera);
+    if(vtmp.z>1){L.e.style.display='none';continue;}
+    L.e.style.display='block';L.e.style.left=((vtmp.x+1)/2*innerWidth)+'px';L.e.style.top=((1-vtmp.y)/2*innerHeight)+'px';
+  }
+}
+
+/* ================= UI ================= */
+const PRESETS=[
+ {n:'วันปกติ',p:{rain:0,dur:2,flow:1000,tide:1.0,subs:0}},
+ {n:'ฝนตกหนักกลางเมือง',p:{rain:100,dur:3,flow:1200,tide:1.1,subs:0}},
+ {n:'น้ำเหนือหลาก',p:{rain:10,dur:2,flow:3800,tide:1.2,subs:0}},
+ {n:'น้ำทะเลหนุนสูง',p:{rain:0,dur:2,flow:1500,tide:2.0,subs:0}},
+ {n:'3 น้ำพร้อมกัน (แบบปี 2554)',p:{rain:60,dur:3,flow:3800,tide:1.9,subs:0}},
+ {n:'อนาคต: ทรุด + ทะเลสูงขึ้น',p:{rain:60,dur:3,flow:2500,tide:2.3,subs:60}},
+];
+const $=id=>document.getElementById(id);
+const pb=$('presets');
+PRESETS.forEach((pr,k)=>{const b=document.createElement('button');b.textContent=pr.n;b.onclick=()=>{Object.assign(P,pr.p,{walls:true,dikes:true,drains:true});syncUI();
+  [...pb.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');run(true);};pb.appendChild(b);});
+const fmt={rain:v=>v+' มม./ชม.',dur:v=>v+' ชม.',flow:v=>Number(v).toLocaleString()+' ลบ.ม./วิ',tide:v=>Number(v).toFixed(2)+' ม.',subs:v=>v+' ซม.'};
+function syncUI(){for(const k of ['rain','dur','flow','tide','subs']){$(k).value=P[k];$('v-'+k).textContent=fmt[k](P[k]);}
+  for(const k of ['walls','dikes','drains'])$(k).checked=P[k];}
+let tm;
+for(const k of ['rain','dur','flow','tide','subs'])$(k).addEventListener('input',e=>{P[k]=+e.target.value;$('v-'+k).textContent=fmt[k](P[k]);
+  [...pb.children].forEach(x=>x.classList.remove('on'));clearTimeout(tm);tm=setTimeout(()=>run(false),60);});
+for(const k of ['walls','dikes','drains'])$(k).addEventListener('change',e=>{P[k]=e.target.checked;run(false);});
+
+const CAUSE=[['น้ำฝนขัง','var(--rain)'],['น้ำล้นจากแม่น้ำ','var(--river)'],['น้ำทะเล','var(--sea)'],['น้ำเหนือไหลบ่า','var(--north)']];
+let lastSubs=-1;
+function run(reset){
+  simulate();
+  let ma=0;for(let c=0;c<N;c++)if(tExt[c]>0&&!kind[c])ma=Math.max(ma,arrival[c]);SIM.maxArr=ma;
+  if(P.subs!==lastSubs){updateTerrain();updateBuildings();lastSubs=P.subs;}
+  else updateWalls();
+  updateInfra();
+  if(reset){simT=0;cur.fill(0);}
+  renderStats();
+}
+function renderStats(){
+  const s=SIM;
+  $('g-river').textContent=s.riverMid.toFixed(2)+' ม.รทก.';
+  $('g-fill').style.width=clamp(s.riverMid/4*100,0,100)+'%';
+  $('g-fill').style.background=(P.walls&&s.riverMid>s.coreWall)||(!P.walls&&s.riverMid>1.8)?'var(--warn)':'var(--river)';
+  const wl=P.walls?s.coreWall:1.8;
+  $('g-wall').style.left=clamp(wl/4*100,0,100)+'%';
+  $('g-walltxt').textContent=(P.walls?'สันเขื่อน ':'ตลิ่ง ')+wl.toFixed(2)+' ม.';
+  $('s-area').textContent=Math.round(s.area).toLocaleString()+' ตร.กม.';
+  $('s-deep').textContent=Math.round(s.deep).toLocaleString()+' ตร.กม.';
+  const mx=Math.max(1,...s.by);
+  $('causes').innerHTML=CAUSE.map(([n,c],k)=>`<div class="cause"><span><span class="dot" style="background:${c}"></span>${n}</span><span class="cb"><i style="width:${s.by[k]/mx*100}%;background:${c}"></i></span><span class="n">${Math.round(s.by[k])} ตร.กม.</span></div>`).join('');
+  const L=[];
+  if(s.excess>0) L.push(['warn',`ฝน ${P.rain} มม./ชม. แรงกว่าที่ระบบระบายได้ (~${Math.round(s.cap)} มม./ชม.) น้ำส่วนเกินราว ${Math.round(s.excess)} มม. ไปขังในจุดต่ำ`]);
+  else if(P.rain>0) L.push(['ok',`ฝน ${P.rain} มม./ชม. ยังอยู่ในขีดที่ระบายได้ (~${Math.round(s.cap)} มม./ชม.)`]);
+  if(s.cap<(P.drains?60:25)-1) L.push(['',`ระดับน้ำในแม่น้ำ/ทะเลที่สูง ทำให้สูบน้ำออกได้ช้าลง ขีดความสามารถระบายเหลือ ~${Math.round(s.cap)} มม./ชม.`]);
+  if(P.walls){ if(s.riverMid>s.coreWall) L.push(['warn',`น้ำเจ้าพระยา ${s.riverMid.toFixed(2)} ม. สูงกว่าสันเขื่อน (${s.coreWall.toFixed(2)} ม.) น้ำล้นเข้าเมือง`]);
+    else if(s.riverMid>2.0) L.push(['',`น้ำเจ้าพระยาสูง ${s.riverMid.toFixed(2)} ม. แต่เขื่อนยังกันไว้ได้ เหลือระยะพ้นน้ำ ${Math.round((s.coreWall-s.riverMid)*100)} ซม.`]);}
+  else L.push(['warn','ไม่มีแนวเขื่อน: เมื่อน้ำสูงกว่าตลิ่ง (~1.8 ม.) จะล้นเข้าพื้นที่ริมแม่น้ำทันที']);
+  if(P.tide>=1.6) L.push([s.by[2]>1?'warn':'',`น้ำทะเลหนุน ${P.tide.toFixed(2)} ม. ดันระดับน้ำปากแม่น้ำให้สูงขึ้น${s.by[2]>1?' และล้นคันกั้นน้ำชายฝั่งเข้าพื้นที่ต่ำ':''}`]);
+  if(s.by[3]>1) L.push(['warn',`น้ำเหนือ ${P.flow.toLocaleString()} ลบ.ม./วิ ไหลบ่ามาทางทุ่งด้านเหนือ ท่วมจากเหนือลงใต้${P.dikes?' คันกั้นน้ำฝั่งตะวันออกช่วยผันน้ำไปพื้นที่รับน้ำ':''}`]);
+  if(P.subs>0) L.push(['',`แผ่นดินทรุด ${P.subs} ซม. ทำให้พื้นที่และแนวเขื่อนต่ำลง (ฝั่งตะวันออกและชายฝั่งทรุดมากที่สุด)`]);
+  if(!L.length||s.area<1) L.push(['ok','ไม่มีน้ำท่วมในวงกว้าง ลองเพิ่มน้ำฝน น้ำเหนือ หรือน้ำทะเลหนุนดู']);
+  $('explain').innerHTML=L.map(([c,t])=>`<li class="${c}">${t}</li>`).join('');
+}
+function renderLegend(){
+  $('legend').innerHTML=viewMode==='elev'
+   ?`<b>ความสูงพื้นที่ (ม.รทก.)</b><div class="ramp" style="background:linear-gradient(90deg,#5b2a86,#6b46c1,#2f80ed,#22a39f,#7cc36b,#e9c46a,#e07a3f)"></div><div class="ticks"><span>&lt;0</span><span>0.75</span><span>1.75</span><span>3+</span></div>`
+   :`<b>ความลึกน้ำท่วม</b><div class="ramp" style="background:linear-gradient(90deg,#9fd3e0,#3f8fd0 30%,#1c3f8f)"></div><div class="ticks"><span>0</span><span>30 ซม.</span><span>1 ม.+</span></div>
+     <div style="margin-top:6px;color:var(--muted)">▮ <span style="color:#9aa3ab">เขื่อน</span> ▮ <span style="color:#8a6a44">คันกั้นน้ำ</span> ● <span style="color:#d94b2b">สถานีสูบ</span></div>`;
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{viewMode=b.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('on',x===b));updateTerrain();renderLegend();});
+$('btn-labels').onclick=e=>{showLabels=!showLabels;e.target.classList.toggle('on',showLabels);};
+$('replay').onclick=()=>{simT=0;cur.fill(0);};
+
+// camera presets
+const CAMS={all:[[-6,46,48],[2,0,0]],core:[[wx(100.47),9,wz(13.68)],[wx(100.53),0,wz(13.745)]],
+  mouth:[[wx(100.50),12,wz(13.44)],[wx(100.58),0,wz(13.55)]],east:[[wx(100.60),16,wz(13.62)],[wx(100.76),0,wz(13.78)]]};
+let tween=null;
+document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>{const [p,t]=CAMS[b.dataset.cam];tween={t:0,p0:camera.position.clone(),t0:controls.target.clone(),p1:new THREE.Vector3(...p),t1:new THREE.Vector3(...t)};});
+
+// tooltip
+const tip=$('tip'),ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let hoverEv=null;
+renderer.domElement.addEventListener('pointermove',e=>{hoverEv=e;});
+renderer.domElement.addEventListener('pointerleave',()=>{hoverEv=null;tip.style.display='none';});
+function nearestDistrict(lat,lon){let b='',bd=1e9;for(const [n,la,lo] of DISTRICTS){const d=Math.hypot(la-lat,lo-lon);if(d<bd){bd=d;b=n;}}return b;}
+function updateTip(){
+  if(!hoverEv)return;const e=hoverEv;
+  mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);
+  let y=1*VEX,pt=new THREE.Vector3();
+  for(let it=0;it<3;it++){const pl=new THREE.Plane(new THREE.Vector3(0,1,0),-y);if(!ray.ray.intersectPlane(pl,pt)){tip.style.display='none';return;}
+    const lon=pt.x/S+LONC,lat=LATC-pt.z/S;if(lat<LAT0||lat>LAT1||lon<LON0||lon>LON1){tip.style.display='none';return;}y=Math.max(hEff[cellAt(lat,lon)],0)*VEX;}
+  const lon=pt.x/S+LONC,lat=LATC-pt.z/S,c=cellAt(lat,lon);
+  let html;
+  if(kind[c]===1) html=`<b>แม่น้ำเจ้าพระยา</b><br>ระดับน้ำ ${(hEff[c]+cur[c]).toFixed(2)} ม.รทก.`;
+  else if(kind[c]===2) html=`<b>อ่าวไทย</b><br>ระดับน้ำทะเล ${P.tide.toFixed(2)} ม.รทก.`;
+  else{const d=cur[c];const cs=tExt[c]>0?CAUSE[src[c]][0]:(tRain[c]>0.02?CAUSE[0][0]:'');
+    html=`<b>${nearestDistrict(lat,lon)}</b> <span style="color:var(--muted)">(โดยประมาณ)</span><br>ความสูงพื้น ${hEff[c].toFixed(2)} ม.รทก.<br>น้ำท่วม ${d>0.02?Math.round(d*100)+' ซม.':'–'}${cs&&d>0.02?' · '+cs:''}`;
+    if(wallType[c]) html+=`<br>${['','แนวเขื่อน','คันกั้นน้ำพระราชดำริ','คันกั้นน้ำชายฝั่ง','คันกั้นน้ำสุวรรณภูมิ'][wallType[c]]} สูง ${wallTop(c).toFixed(2)} ม.`;}
+  tip.innerHTML=html;tip.style.display='block';
+  tip.style.left=Math.min(e.clientX+14,innerWidth-220)+'px';tip.style.top=(e.clientY+14)+'px';
+}
+
+/* ================= Loop ================= */
+const clock=new THREE.Clock();const fv=new THREE.Vector3();
+function tick(){
+  const dt=Math.min(clock.getDelta(),0.05);
+  if(tween){tween.t=Math.min(1,tween.t+dt*1.2);const e=sstep(tween.t);camera.position.lerpVectors(tween.p0,tween.p1,e);controls.target.lerpVectors(tween.t0,tween.t1,e);if(tween.t>=1)tween=null;}
+  controls.update();
+  updateWater(dt);
+  // rain
+  const rc=Math.floor(P.rain/150*RMAX);rainGeo.setDrawRange(0,rc);
+  if(rc){const a=rainGeo.attributes.position.array;for(let k=0;k<rc;k++){a[k*3+1]-=dt*(14+(k%7));if(a[k*3+1]<0)a[k*3+1]+=20;}rainGeo.attributes.position.needsUpdate=true;}
+  // flow
+  const fa=flowGeo.attributes.position.array,sp=(0.004+P.flow/5000*0.03)*dt;
+  for(let k=0;k<FMAX;k++){flowU[k]=(flowU[k]+sp)%1;const seg=riverPoint(flowU[k],fv);
+    const a=rWorld[seg-1],b=rWorld[seg];const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1;
+    fa[k*3]=fv.x-dz/L*flowOff[k];fa[k*3+2]=fv.z+dx/L*flowOff[k];fa[k*3+1]=riverLevel(1-flowU[k])*VEX+0.04;}
+  flowGeo.attributes.position.needsUpdate=true;
+  updateLabels();updateTip();
+  renderer.render(scene,camera);requestAnimationFrame(tick);
+}
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+
+syncUI();renderLegend();run(true);pb.children[0].classList.add('on');
+window.__ready=true;window.__P=P;window.__SIM=()=>SIM;window.__run=run;
+tick();
+</script>
+</body>
+</html>

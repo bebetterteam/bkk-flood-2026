@@ -1,0 +1,194 @@
+/**
+ * ตัวคำนวณน้ำท่วม (pure function, ไม่พึ่ง three.js)
+ *
+ * วิธี: priority-flood จากแหล่งน้ำ (แม่น้ำ ทะเล น้ำเหนือ) ลดระดับ LOSS ม./เซลล์ตามระยะทาง
+ * ข้ามสิ่งกีดขวาง (พื้น/เขื่อน/คันกั้นน้ำ) ได้เมื่อสูงกว่า แล้วบวกน้ำฝนส่วนเกินที่ระบายไม่ทัน
+ * ตามตัวคูณการขัง (pond) — ไม่ใช่การคำนวณการไหลจริง
+ *
+ * ⚠️ ค่าคาลิเบรตทั้งหมดในไฟล์นี้ถูกล็อกด้วยเทสต์ ถ้าแก้ต้องอัปเดตเทสต์และบันทึกเหตุผล
+ */
+import { CELL_KM2, N, NX, NZ, idx } from './coords';
+import { Heap } from './heap';
+import { clamp } from './math';
+import { WALL_RIVER, type Grid } from './grid';
+
+export interface SimParams {
+  /** ความแรงฝน มม./ชม. */
+  rain: number;
+  /** ฝนตกนาน ชม. */
+  dur: number;
+  /** น้ำเหนือ ลบ.ม./วินาที */
+  flow: number;
+  /** ระดับน้ำทะเลหนุนสูงสุด ม.รทก. */
+  tide: number;
+  /** แผ่นดินทรุดเพิ่ม ซม. */
+  subs: number;
+  walls: boolean;
+  dikes: boolean;
+  drains: boolean;
+}
+
+/** แหล่งที่มาของน้ำท่วม (index ใน `by`) */
+export const SRC_RAIN = 0,
+  SRC_RIVER = 1,
+  SRC_SEA = 2,
+  SRC_NORTH = 3;
+
+export interface SimResult {
+  /** ระดับน้ำเจ้าพระยาที่ปากคลองตลาด ม.รทก. */
+  riverMid: number;
+  /** ขีดความสามารถระบายน้ำฝน มม./ชม. */
+  cap: number;
+  /** น้ำฝนส่วนเกิน มม. */
+  excess: number;
+  /** พื้นที่ท่วม >10 ซม. (ตร.กม., ไม่รวมชายเลน) */
+  area: number;
+  /** พื้นที่ท่วม >50 ซม. (ตร.กม.) */
+  deep: number;
+  /** พื้นที่ท่วมแยกตามแหล่ง [ฝน, แม่น้ำ, ทะเล, น้ำเหนือ] ตร.กม. */
+  by: number[];
+  /** พื้นที่ดินทั้งหมดที่นับ (ตร.กม.) */
+  land: number;
+  /** สันเขื่อนกลางเมืองหลังทรุด ม.รทก. */
+  coreWall: number;
+  /** ระดับน้ำเหนือที่ไหลบ่าเข้าขอบบน (-1e9 = ไม่มี) */
+  north: number;
+  /** ระยะทาง (เซลล์) ที่น้ำภายนอกไปถึงไกลสุด ใช้กำหนดเวลาแอนิเมชัน */
+  maxArr: number;
+
+  /** ต่อเซลล์ */
+  hEff: Float32Array;
+  reach: Float32Array;
+  arrival: Float32Array;
+  src: Uint8Array;
+  /** ความลึกน้ำจากภายนอก (ม.) */
+  tExt: Float32Array;
+  /** ความลึกน้ำฝนขัง (ม.) */
+  tRain: Float32Array;
+}
+
+/** ระดับน้ำในแม่น้ำ ณ ตำแหน่ง s (0 ปาก .. 1 เหนือ) */
+export const riverLevel = (P: SimParams, s: number): number =>
+  P.tide * (1 - 0.3 * s) + Math.pow(P.flow / 1000, 1.2) * 0.28 * (0.2 + s);
+
+/** ความสูงสันเขื่อน/คันกั้นน้ำหลังทรุด */
+export const wallTop = (g: Grid, P: SimParams, c: number): number =>
+  g.wallBase[c] - (P.subs / 100) * g.subW[c];
+
+const LOSS = 0.03;
+
+export function simulate(g: Grid, P: SimParams): SimResult {
+  const { kind, h0, subW, wallType, riverS, intertidal, pond } = g;
+  const hEff = new Float32Array(N),
+    reach = new Float32Array(N),
+    arrival = new Float32Array(N),
+    src = new Uint8Array(N),
+    tExt = new Float32Array(N),
+    tRain = new Float32Array(N),
+    obst = new Float32Array(N);
+  const sub = P.subs / 100;
+  for (let c = 0; c < N; c++) {
+    hEff[c] = kind[c] ? h0[c] : h0[c] - sub * subW[c];
+    let ob = hEff[c];
+    const w = wallType[c];
+    if (w === WALL_RIVER && P.walls) ob = Math.max(ob, wallTop(g, P, c));
+    if (w >= 2 && P.dikes) ob = Math.max(ob, wallTop(g, P, c));
+    obst[c] = ob;
+    reach[c] = -1e9;
+  }
+  const H = new Heap();
+  for (let c = 0; c < N; c++) {
+    if (kind[c] === 1) {
+      reach[c] = riverLevel(P, riverS[c]);
+      src[c] = SRC_RIVER;
+      H.push(reach[c], c);
+    } else if (kind[c] === 2) {
+      reach[c] = P.tide;
+      src[c] = SRC_SEA;
+      H.push(reach[c], c);
+    }
+  }
+  const north = P.flow > 2800 ? 1.75 + ((P.flow - 2800) / 1000) * 0.6 : -1e9;
+  for (let i = 0; i < NX; i++) {
+    const c = idx(i, 0);
+    if (!kind[c] && north > obst[c]) {
+      reach[c] = north;
+      src[c] = SRC_NORTH;
+      H.push(north, c);
+    }
+  }
+  while (H.n) {
+    const c = H.pop();
+    const i = c % NX,
+      j = (c / NX) | 0,
+      rc = reach[c];
+    for (let dj = -1; dj <= 1; dj++)
+      for (let di = -1; di <= 1; di++) {
+        if (!di && !dj) continue;
+        const ii = i + di,
+          jj = j + dj;
+        if (ii < 0 || jj < 0 || ii >= NX || jj >= NZ) continue;
+        const n = idx(ii, jj);
+        if (kind[n]) continue;
+        const step = di && dj ? 1.414 : 1;
+        const cand = rc - LOSS * step;
+        if (cand > obst[n] && cand > reach[n]) {
+          reach[n] = cand;
+          arrival[n] = arrival[c] + step;
+          src[n] = src[c];
+          H.push(cand, n);
+        }
+      }
+  }
+  const riverMid = riverLevel(P, g.pktS);
+  const cap =
+    (P.drains ? 60 : 25) *
+    clamp(1 - Math.max(0, riverMid - 1.6) * 0.5 - Math.max(0, P.tide - 1.4) * 0.4, 0.35, 1);
+  const excess = Math.max(0, P.rain - cap) * P.dur; // มม.
+
+  let area = 0,
+    deep = 0,
+    landCells = 0,
+    maxArr = 0;
+  const by = [0, 0, 0, 0];
+  for (let c = 0; c < N; c++) {
+    if (kind[c]) {
+      tExt[c] = reach[c] - hEff[c];
+      tRain[c] = 0;
+      continue;
+    }
+    const e = reach[c] > hEff[c] ? reach[c] - hEff[c] : 0;
+    const r = (excess / 1000) * pond[c];
+    tExt[c] = e;
+    // ถ้าน้ำภายนอกเข้าถึงแล้ว นับน้ำฝนเพียง 30% (กรณีขอบ: อาจทำให้ความลึกรวมลดลง ดู CLAUDE.md)
+    tRain[c] = e > 0 ? r * 0.3 : r;
+    if (tExt[c] > 0) maxArr = Math.max(maxArr, arrival[c]);
+    if (intertidal[c]) continue;
+    landCells++;
+    const d = tExt[c] + tRain[c];
+    if (d > 0.1) {
+      area++;
+      by[e > 0 ? src[c] : SRC_RAIN]++;
+    }
+    if (d > 0.5) deep++;
+  }
+  const coreWall = 2.8 - sub * 0.55;
+  return {
+    riverMid,
+    cap,
+    excess,
+    area: area * CELL_KM2,
+    deep: deep * CELL_KM2,
+    by: by.map((x) => x * CELL_KM2),
+    land: landCells * CELL_KM2,
+    coreWall,
+    north,
+    maxArr,
+    hEff,
+    reach,
+    arrival,
+    src,
+    tExt,
+    tRain,
+  };
+}

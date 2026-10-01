@@ -1,0 +1,5 @@
+dist
+node_modules
+prototype
+package-lock.json
+INIT_PROMPT.md
