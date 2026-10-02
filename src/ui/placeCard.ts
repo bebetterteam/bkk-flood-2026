@@ -15,16 +15,43 @@ const causeChip = (cause: number) =>
 const depthText = (r: CellReading) =>
   r.depth > FLOOD_DEPTH ? PLACE.cm(r.depth) : r.depth > 0.02 ? PLACE.shallow : PLACE.noFlood;
 
+export interface PromptActions {
+  onGps: () => void;
+  onPin: () => void;
+  onLater: () => void;
+}
+
 export function createPlaceCard(root: HTMLElement, actions: { onGoTo: () => void; onClear: () => void }) {
   root.hidden = true;
   let loc: PickedLocation | null = null;
   let probe: ProbeResult | null = null;
   let loading = false;
   let now: CellReading | null = null;
+  /** การ์ดชวน (ยังไม่มีตำแหน่ง) — แสดงเมื่อเปิดโหมดพื้นที่ศึกษาครั้งแรก */
+  let prompt: PromptActions | null = null;
+
+  function renderPrompt(a: PromptActions): void {
+    root.hidden = false;
+    root.innerHTML = `
+      <div class="head"><b>${PLACE.title}</b><button class="x" type="button" aria-label="${PLACE.close}">×</button></div>
+      <p class="intro">${PLACE.promptText}</p>
+      <div class="acts"><button type="button" class="primary gps">${PLACE.promptGps}</button><button type="button" class="pin">${PLACE.promptPin}</button><button type="button" class="later">${PLACE.promptLater}</button></div>
+      <p class="fine">${PLACE.privacy}</p>`;
+    const close = () => {
+      prompt = null;
+      root.hidden = true;
+      a.onLater();
+    };
+    root.querySelector<HTMLButtonElement>('.x')!.onclick = close;
+    root.querySelector<HTMLButtonElement>('.later')!.onclick = close;
+    root.querySelector<HTMLButtonElement>('.gps')!.onclick = () => a.onGps();
+    root.querySelector<HTMLButtonElement>('.pin')!.onclick = () => a.onPin();
+  }
 
   function render(): void {
     if (!loc) {
-      root.hidden = true;
+      if (prompt) renderPrompt(prompt);
+      else root.hidden = true;
       return;
     }
     root.hidden = false;
@@ -85,6 +112,7 @@ export function createPlaceCard(root: HTMLElement, actions: { onGoTo: () => void
     /** ตั้งตำแหน่งใหม่ (ล้างผลเดิม รอผลจาก worker) */
     setLocation(l: PickedLocation | null): void {
       loc = l;
+      if (l) prompt = null;
       probe = null;
       now = null;
       loading = !!l;
@@ -109,5 +137,18 @@ export function createPlaceCard(root: HTMLElement, actions: { onGoTo: () => void
     show(): void {
       if (loc) root.hidden = false;
     },
+    /** แสดงการ์ดชวน (ถ้ายังไม่มีตำแหน่ง) */
+    showPrompt(a: PromptActions): void {
+      if (loc) return;
+      prompt = a;
+      render();
+    },
+    /** ซ่อนการ์ดชวน (เช่นสลับกลับโหมดภาพรวม) — ไม่กระทบการ์ดผลของหมุดที่มีอยู่ */
+    hidePrompt(): void {
+      if (!prompt) return;
+      prompt = null;
+      render();
+    },
+    isPrompting: () => !!prompt && !loc,
   };
 }

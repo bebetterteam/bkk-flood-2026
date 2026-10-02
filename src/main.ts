@@ -203,6 +203,18 @@ async function setMode(m: AppMode): Promise<void> {
     else camTween.goToPose(...CAMS.all, true);
     topbar.setMode(m);
     renderLegend(viewMode, isStudy);
+    // ครั้งแรกที่เปิดพื้นที่ศึกษา (ต่อการเปิดหน้า) ชวนดู "ที่นี่ท่วมไหม?" — ไม่ขอ GPS เองจนกว่าผู้ใช้จะกด
+    if (isStudy && !place && !prompted) {
+      prompted = true;
+      card.showPrompt({
+        onGps: () => locate.locate(),
+        onPin: () => {
+          card.hidePrompt();
+          locate.setPicking(true);
+        },
+        onLater: () => undefined,
+      });
+    } else if (!isStudy) card.hidePrompt();
     lastSubs = -1;
     await run(true);
   } catch (e) {
@@ -254,6 +266,7 @@ new ResizeObserver(() =>
 // ---- ตำแหน่งของผู้ใช้ / หมุด (MVP 4) — ตำแหน่งอยู่ในหน่วยความจำของหน้านี้เท่านั้น ----
 const marker = createMarker(scene, $('labels'));
 let place: PickedLocation | null = null;
+let prompted = false;
 const locMsg = $('locmsg');
 const showMsg = (m: string | null) => {
   locMsg.hidden = !m;
