@@ -19,11 +19,9 @@ describe('DEM', () => {
     expect(meta.nz * meta.dlat).toBeCloseTo(north - south, 9);
   });
   it('ไม่มี NaN และความสูงอยู่ในช่วงที่สมเหตุสมผล (−5…30 ม.)', () => {
-    for (const v of dem) {
-      expect(Number.isFinite(v)).toBe(true);
-      expect(v).toBeGreaterThanOrEqual(-5);
-      expect(v).toBeLessThanOrEqual(30);
-    }
+    let bad = 0;
+    for (const v of dem) if (!Number.isFinite(v) || v < -5 || v > 30) bad++;
+    expect(bad).toBe(0);
   });
   it('มีการระบุ datum และสถานะ verticalOffset', () => {
     expect(meta.verticalDatum).toBe('EGM2008');
@@ -50,11 +48,16 @@ describe('ตึก', () => {
       expect(o + n).toBeLessThanOrEqual(bin.length);
   });
   it('ทุกจุดอยู่ใน bbox', () => {
+    // นับจุดที่ผิดแล้ว assert ครั้งเดียว (expect ทีละจุด ~85 หมื่นครั้งช้าจน timeout เมื่อรันพร้อมเทสต์อื่น)
     const [W, H] = bm.extentMeters;
-    for (let k = 0; k < verts.length; k += 2) {
-      expect(verts[k] * bm.quantMeters).toBeLessThanOrEqual(W + bm.quantMeters);
-      expect(verts[k + 1] * bm.quantMeters).toBeLessThanOrEqual(H + bm.quantMeters);
-    }
+    let bad = 0;
+    for (let k = 0; k < verts.length; k += 2)
+      if (
+        verts[k] * bm.quantMeters > W + bm.quantMeters ||
+        verts[k + 1] * bm.quantMeters > H + bm.quantMeters
+      )
+        bad++;
+    expect(bad).toBe(0);
   });
   it('ความสูง > 0 และแหล่งที่มาถูกต้อง; ring อ้างอิงไม่เกินขอบ', () => {
     for (let i = 0; i < bm.count; i++) {
