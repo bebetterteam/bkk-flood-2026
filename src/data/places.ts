@@ -54,3 +54,17 @@ export const STUDY_LABELS: readonly (readonly [string, number, number, LabelKind
   ['สวนลุมพินี', 13.7315, 100.5414], ['ท่าเรือคลองเตย', 13.7065, 100.568], ['อโศก', 13.7375, 100.5605],
   ['คลองบางกอกใหญ่', 13.7225, 100.475, 'flow'],
 ];
+
+/** ชื่อเขตที่ใกล้ที่สุด (จากจุดศูนย์กลางโดยประมาณใน DISTRICTS) */
+export function nearestDistrict(lat: number, lon: number): string {
+  let b = '',
+    bd = 1e9;
+  for (const [n, la, lo] of DISTRICTS) {
+    const d = Math.hypot(la - lat, lo - lon);
+    if (d < bd) {
+      bd = d;
+      b = n;
+    }
+  }
+  return b;
+}

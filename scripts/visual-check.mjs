@@ -7,7 +7,8 @@
  *      --user-data-dir=/tmp/bkk-chrome --window-size=1440,900 about:blank
  * 3) node scripts/visual-check.mjs http://localhost:5173/ <โฟลเดอร์ภาพ> [overview | study | study,real | ไฟล์ขั้นตอน.json]
  *    ไฟล์ .json = [{ "eval": "...", "wait": ms, "shot": "ชื่อภาพ" }] (ดู scripts/visual-check.example.json)
- *    ขั้นตอนอื่น: { "key": "Space", "type": "keyDown"|"keyUp" }, { "drag": [x1, y1, x2, y2] }
+ *    ขั้นตอนอื่น: { "key": "Space", "type": "keyDown"|"keyUp" }, { "drag": [x1, y1, x2, y2] }, { "click": [x, y] },
+ *      { "geo": [lat, lon, accM] | "deny" | "timeout" }, { "scheme": "light"|"dark" }, { "size": [w, h] }
  *    hook ที่ใช้ได้: __mode('study'|'overview'), __quality('simple'|'real'|'high'), __cam(lat, lon, dist, h), __SIM()
  */
 import { writeFileSync } from 'node:fs';
@@ -73,6 +74,7 @@ const send = (method, params = {}, timeout = 15000) =>
     }, timeout);
   });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 const evaluate = async (expr, timeout = 5000) => {
   const r = await send(
     'Runtime.evaluate',
@@ -113,6 +115,50 @@ if (steps.endsWith('.json')) {
   // สคริปต์: [{eval?, wait?, shot?}]
   const { readFileSync } = await import('node:fs');
   for (const a of JSON.parse(readFileSync(steps, 'utf8'))) {
+    if (a.geo) {
+      // { "geo": [lat, lon, accuracyM] } หรือ { "geo": "deny" | "timeout" }
+      // headless Chrome ปฏิเสธคำขอตำแหน่งอัตโนมัติ จึงแทนที่ getCurrentPosition ในหน้า (ทดสอบตรรกะของแอป ไม่ใช่หน้าต่างขอสิทธิ์ของ Chrome)
+      const g = JSON.stringify(a.geo);
+      await evaluate(`(() => {
+        const g = ${g};
+        navigator.geolocation.getCurrentPosition = (ok, err) => setTimeout(() => {
+          if (Array.isArray(g)) ok({ coords: { latitude: g[0], longitude: g[1], accuracy: g[2] ?? 30 }, timestamp: Date.now() });
+          else err({ code: g === 'deny' ? 1 : 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: g });
+        }, 50);
+        return 'geo stub ' + JSON.stringify(g);
+      })()`);
+    }
+    if (a.click) {
+      const [x, y] = a.click;
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+      await send('Input.dispatchMouseEvent', {
+        type: 'mousePressed',
+        x,
+        y,
+        button: 'left',
+        buttons: 1,
+        clickCount: 1,
+      });
+      await send('Input.dispatchMouseEvent', {
+        type: 'mouseReleased',
+        x,
+        y,
+        button: 'left',
+        buttons: 0,
+        clickCount: 1,
+      });
+    }
+    if (a.scheme)
+      await send('Emulation.setEmulatedMedia', {
+        features: [{ name: 'prefers-color-scheme', value: a.scheme }],
+      });
+    if (a.size)
+      await send('Emulation.setDeviceMetricsOverride', {
+        width: a.size[0],
+        height: a.size[1],
+        deviceScaleFactor: 1,
+        mobile: a.size[0] < 600,
+      });
     if (a.key) {
       // { "key": "Space", "type": "keyDown" | "keyUp" }
       await send('Input.dispatchKeyEvent', {

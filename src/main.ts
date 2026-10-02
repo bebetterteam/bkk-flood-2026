@@ -28,6 +28,12 @@ import { renderLegend } from './ui/legend';
 import { createTooltip, type TooltipContext } from './ui/tooltip';
 import { createTopbar, type AppMode } from './ui/topbar';
 import { enableSpacePan } from './ui/spacePan';
+import { createLocate, type PickedLocation } from './ui/locate';
+import { createPlaceCard } from './ui/placeCard';
+import { createMarker } from './scene/marker';
+import { groundPoint } from './scene/pick';
+import { cellOf, readCell } from './sim/probe';
+import { PLACE } from './ui/strings';
 import { STUDY } from './ui/strings';
 
 const grid = buildGrid();
@@ -237,6 +243,80 @@ const topbar = createTopbar($('topbar'), $('clock'), {
   onQuality: (q) => void setQuality(q as Quality),
 });
 const tooltip = createTooltip($('tip'), renderer.domElement, camera);
+// ความสูงจริงของแถบปุ่มด้านบน (บนจอแคบปุ่มขึ้นหลายแถว) — ใช้จำกัดความสูงการ์ดตำแหน่งไม่ให้ทับ
+new ResizeObserver(() =>
+  document.documentElement.style.setProperty(
+    '--topbar-bottom',
+    `${$('topbar').getBoundingClientRect().bottom}px`,
+  ),
+).observe($('topbar'));
+
+// ---- ตำแหน่งของผู้ใช้ / หมุด (MVP 4) — ตำแหน่งอยู่ในหน่วยความจำของหน้านี้เท่านั้น ----
+const marker = createMarker(scene, $('labels'));
+let place: PickedLocation | null = null;
+const locMsg = $('locmsg');
+const showMsg = (m: string | null) => {
+  locMsg.hidden = !m;
+  locMsg.textContent = m ?? '';
+};
+const activeFrame = () => (mode === 'study' ? study!.frame : overviewFrame);
+const activeGrid = () => (mode === 'study' ? study!.grid : grid);
+const inStudyBbox = (lat: number, lon: number) => {
+  const b = STUDY_CONFIG.bbox;
+  return lat >= b.south && lat <= b.north && lon >= b.west && lon <= b.east;
+};
+function flyTo(lat: number, lon: number): void {
+  if (mode === 'study') {
+    const f = study!.frame;
+    camTween.goToPose([f.wx(lon) - 21, 45, f.wz(lat) + 60], [f.wx(lon), 0, f.wz(lat)]);
+  } else {
+    const f = overviewFrame;
+    camTween.goToPose([f.wx(lon) - 2.5, 7, f.wz(lat) + 6.5], [f.wx(lon), 0, f.wz(lat)]);
+  }
+}
+function updatePlaceNow(): void {
+  if (!place || !sim) return;
+  const g = activeGrid();
+  const c = cellOf(g, place.lat, place.lon);
+  card.setNow(c >= 0 && !g.kind[c] ? readCell(g, sim, c) : null);
+}
+const card = createPlaceCard($('place'), {
+  onGoTo: () => place && flyTo(place.lat, place.lon),
+  onClear: () => {
+    place = null;
+    marker.set(null);
+    card.setLocation(null);
+  },
+});
+async function goToLocation(p: PickedLocation): Promise<void> {
+  if (cellOf(grid, p.lat, p.lon) < 0) {
+    locate.setPicking(true); // เปิดโหมดปักหมุดให้เลย (ข้อความนอกพื้นที่แทนคำแนะนำปักหมุด)
+    showMsg(PLACE.outside);
+    return;
+  }
+  place = p;
+  marker.set({ ...p, label: p.source === 'gps' ? PLACE.markerGps : PLACE.markerPin });
+  card.setLocation(p);
+  const wantStudy = inStudyBbox(p.lat, p.lon);
+  if (wantStudy && mode !== 'study') await setMode('study');
+  else if (!wantStudy && mode === 'study') await setMode('overview');
+  flyTo(p.lat, p.lon);
+  updatePlaceNow();
+  const res = await client.probe(p.lat, p.lon);
+  if (place === p) card.setProbe(res);
+}
+const locate = createLocate($('topbar'), {
+  canvas: renderer.domElement,
+  pickAt: (x, y) => {
+    if (!sim) return null;
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
+    const hit = groundPoint(ray.ray, activeFrame(), sim.hEff);
+    return hit && { lat: hit.lat, lon: hit.lon };
+  },
+  onLocation: (p) => void goToLocation(p),
+  onMessage: showMsg,
+});
 const activeWater = () => (mode === 'study' ? study!.water : water);
 
 let lastSubs = -1;
@@ -260,6 +340,7 @@ async function run(reset: boolean): Promise<void> {
   }
   if (reset) activeWater().reset();
   renderResults(sim, P);
+  updatePlaceNow();
 }
 
 function tooltipContext(s: SimResult): TooltipContext {
@@ -307,6 +388,7 @@ function tick(): void {
       labels.update(camera, showLabels, sim.hEff, water.cur, P);
     }
     tooltip.update(tooltipContext(sim));
+    marker.update(dt, activeFrame(), sim.hEff, activeWater().cur, camera);
   }
   renderer.render(scene, camera);
   requestAnimationFrame(tick);

@@ -131,6 +131,17 @@ DEM (FABDEM/Copernicus) อ้างอิง geoid EGM2008 แต่แบบ�
 - OpenStreetMap — ODbL ต้องแสดง "© OpenStreetMap contributors"
 - ห้ามใช้ Google 3D Tiles หรือ API ที่ต้องใช้ key/เสียเงิน; ห้าม commit ไฟล์ดิบ (`data/raw/`)
 
+## ตำแหน่งของผู้ใช้ "ที่นี่ท่วมไหม?" (MVP 4)
+
+- `src/ui/locate.ts`: GPS (`getCurrentPosition`, ไม่ใช้ watchPosition) หรือปักหมุด (คลิกที่ลากไม่เกิน 5 px, Esc ยกเลิก)
+- `src/sim/probe.ts`: `probeLocation()` อ่านผลทุก preset ที่จุดเดียว (กริดศึกษาถ้าอยู่ใน bbox, ไม่งั้นกริดภาพรวม) รันใน worker (`probe`);
+  `readCell()` ใช้กับผลปัจจุบันบน main thread ("สถานการณ์ตอนนี้" อัปเดตตามแถบเลื่อน)
+- `src/scene/marker.ts` หมุดที่มองเห็นเสมอ (depthTest ปิด) + วงความแม่นยำ GPS; `src/scene/pick.ts` จุดตัดพื้น (ใช้ร่วมกับ tooltip)
+- `src/ui/placeCard.ts` การ์ด; จุดในพื้นที่ศึกษาสลับไปโหมดพื้นที่ศึกษาอัตโนมัติ, นอกแบบจำลอง → ข้อความ + เปิดโหมดปักหมุด
+- **ความเป็นส่วนตัว:** ตำแหน่งอยู่ในหน่วยความจำของหน้าเท่านั้น — ห้ามส่ง network/เก็บลง storage/ใส่ใน URL
+- ทดสอบใน headless Chrome: `visual-check.mjs` ขั้น `{ "geo": [lat, lon, acc] | "deny" }` แทนที่ `getCurrentPosition` ในหน้า
+  (headless ปฏิเสธคำขอตำแหน่งอัตโนมัติ และ `Browser.setPermission` ไม่มีผล)
+
 ## หน่วยและระบบพิกัด
 
 - พิกัดภูมิศาสตร์ lat/lon (องศา) ขอบเขต lat 13.46–13.96, lon 100.32–100.92

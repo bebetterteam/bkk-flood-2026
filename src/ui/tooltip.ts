@@ -1,23 +1,11 @@
 /** tooltip เมื่อชี้เมาส์บนแผนที่: เขต ความสูงพื้น ความลึกน้ำ และสาเหตุ */
 import * as THREE from 'three';
-import { DISTRICTS } from '../data/places';
+import { nearestDistrict } from '../data/places';
+import { groundPoint } from '../scene/pick';
 import type { Grid } from '../sim/grid';
 import { wallTop, type SimParams, type SimResult } from '../sim/simulate';
 import type { Frame } from '../scene/frame';
 import { CAUSES, TIP } from './strings';
-
-function nearestDistrict(lat: number, lon: number): string {
-  let b = '',
-    bd = 1e9;
-  for (const [n, la, lo] of DISTRICTS) {
-    const d = Math.hypot(la - lat, lo - lon);
-    if (d < bd) {
-      bd = d;
-      b = n;
-    }
-  }
-  return b;
-}
 
 export interface TooltipContext {
   grid: Grid;
@@ -64,21 +52,9 @@ export function createTooltip(tip: HTMLElement, canvas: HTMLElement, camera: THR
     const pt = new THREE.Vector3();
     if (picked) pt.copy(picked.point);
     else {
-      // หาจุดตัดกับพื้นแบบวนซ้ำ 3 รอบ (ระนาบแนวนอนที่ความสูงพื้น)
-      let y = 1 * f.vex;
-      for (let it = 0; it < 3; it++) {
-        const pl = new THREE.Plane(new THREE.Vector3(0, 1, 0), -y);
-        if (!ray.ray.intersectPlane(pl, pt)) {
-          tip.style.display = 'none';
-          return;
-        }
-        const lon = f.lonOfX(pt.x),
-          lat = f.latOfZ(pt.z);
-        if (!f.inBounds(lat, lon)) {
-          tip.style.display = 'none';
-          return;
-        }
-        y = Math.max(hEff[f.cellAt(lat, lon)], 0) * f.vex;
+      if (!groundPoint(ray.ray, f, hEff, pt)) {
+        tip.style.display = 'none';
+        return;
       }
     }
     const lon = f.lonOfX(pt.x),
