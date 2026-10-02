@@ -244,4 +244,24 @@ export const PLACE = {
   promptGps: 'ใช้ตำแหน่งของฉัน',
   promptPin: 'ปักหมุดบนแผนที่',
   promptLater: 'ไว้ทีหลัง',
+  /** พยากรณ์พรุ่งนี้ + 7 วัน */
+  fcTitle: 'พยากรณ์ พรุ่งนี้ + 7 วัน',
+  fcLoading: 'กำลังดึงพยากรณ์อากาศ…',
+  fcError: 'ดึงพยากรณ์ไม่ได้ตอนนี้ (ออฟไลน์หรือบริการขัดข้อง)',
+  fcRetry: 'ลองใหม่',
+  fcTomorrow: (d: string) => `พรุ่งนี้ · ${d}`,
+  fcLevels: ['โอกาสท่วมต่ำ', 'โอกาสท่วมปานกลาง', 'โอกาสท่วมสูง'] as const,
+  fcChanceHint: (members: number) => `ท่วมเกิน 10 ซม. ในกี่ % ของพยากรณ์ ${members} ชุด`,
+  fcDepth: (cm: string) => `ถ้าท่วม ลึกราว ${cm}`,
+  fcInputs: (rain: number, tide: number, flow: number) =>
+    `ฝนแรงสุด (3 ชม.) ${rain.toFixed(1)} มม./ชม. · ทะเลหนุน ${tide.toFixed(2)} ม. · น้ำเหนือในแบบจำลอง ${Math.round(flow).toLocaleString()} ลบ.ม./วิ`,
+  fcNeed: (mm: number) => `ฝนต้องแรง <b>≥ ${Math.round(mm)} มม./ชม. นาน 3 ชม.</b> จุดนี้จึงท่วมเกิน 10 ซม.`,
+  fcNeedExt: 'จุดนี้ท่วมจากน้ำภายนอกอยู่แล้วแม้ไม่มีฝน',
+  fcNeedNone: 'ฝนอย่างเดียวไม่ทำให้จุดนี้ท่วมเกิน 10 ซม. ในแบบจำลอง',
+  fcDayTitle: (date: string, pct: number, rain: number) =>
+    `${date}: โอกาสท่วม ${pct}% · ฝนแรงสุด ${rain.toFixed(1)} มม./ชม.`,
+  fcFetched: (t: string) => `ดึงข้อมูลเมื่อ ${t}`,
+  fcSource: 'ข้อมูลพยากรณ์: Open-Meteo (CC BY 4.0) · ECMWF ENS 51 ชุด · GloFAS',
+  fcNote:
+    'อ่านพยากรณ์อากาศด้วยแบบจำลองเพื่อการศึกษา ไม่ใช่ประกาศเตือนภัย — ติดตามกรมอุตุนิยมวิทยาและสำนักการระบายน้ำ กทม. · พยากรณ์ช่องละ ~25 กม. มักไม่เห็นพายุฝนเฉพาะจุด ฝนจริงอาจแรงกว่านี้มาก',
 };

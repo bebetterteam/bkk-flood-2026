@@ -2,6 +2,7 @@
 import type { SimParams, SimResult } from './simulate';
 import type { StudyGrid, StudyInputs } from './studyGrid';
 import type { ProbeResult } from './probe';
+import type { ForecastInput, ForecastResult } from './forecast';
 import type { SimMode, WorkerRequest, WorkerResponse } from './worker';
 
 export type { SimMode };
@@ -13,6 +14,10 @@ export function createSimClient() {
   const pending = new Map<number, { resolve: (r: SimResult | null) => void; reject: (e: Error) => void }>();
   let onGrid: { resolve: (g: StudyGrid) => void; reject: (e: Error) => void } | null = null;
   const probes = new Map<number, { resolve: (r: ProbeResult | null) => void; reject: (e: Error) => void }>();
+  const forecasts = new Map<
+    number,
+    { resolve: (r: ForecastResult | null) => void; reject: (e: Error) => void }
+  >();
   const send = (m: WorkerRequest) => worker.postMessage(m);
 
   worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
@@ -21,6 +26,9 @@ export function createSimClient() {
     else if (m.type === 'probe') {
       probes.get(m.id)?.resolve(m.result);
       probes.delete(m.id);
+    } else if (m.type === 'forecast') {
+      forecasts.get(m.id)?.resolve(m.result);
+      forecasts.delete(m.id);
     } else if (m.type === 'result') {
       const p = pending.get(m.id);
       pending.delete(m.id);
@@ -30,8 +38,10 @@ export function createSimClient() {
       if (m.id !== undefined) {
         pending.get(m.id)?.reject(err);
         probes.get(m.id)?.reject(err);
+        forecasts.get(m.id)?.reject(err);
         pending.delete(m.id);
         probes.delete(m.id);
+        forecasts.delete(m.id);
       } else onGrid?.reject(err);
     }
   };
@@ -53,6 +63,14 @@ export function createSimClient() {
       return new Promise((resolve, reject) => {
         probes.set(id, { resolve, reject });
         send({ type: 'probe', id, lat, lon });
+      });
+    },
+    /** พยากรณ์รายวันที่จุดเดียว (ตำแหน่งอยู่ในเครื่อง — ส่งเข้า worker เท่านั้น) */
+    forecast(lat: number, lon: number, input: ForecastInput): Promise<ForecastResult | null> {
+      const id = nextId++;
+      return new Promise((resolve, reject) => {
+        forecasts.set(id, { resolve, reject });
+        send({ type: 'forecast', id, lat, lon, input });
       });
     },
     initStudy(inputs: StudyInputs): Promise<StudyGrid> {

@@ -1,5 +1,6 @@
 /** การ์ด "ที่นี่ท่วมไหม?" — ผลที่ตำแหน่งเดียว: ตอนนี้ + ทุกสถานการณ์ตัวอย่าง */
 import { nearestDistrict } from '../data/places';
+import type { ForecastDay, ForecastResult } from '../sim/forecast';
 import { FLOOD_DEPTH, type CellReading, type ProbeResult } from '../sim/probe';
 import { PRESETS } from '../sim/presets';
 import type { PickedLocation } from './locate';
@@ -15,18 +16,73 @@ const causeChip = (cause: number) =>
 const depthText = (r: CellReading) =>
   r.depth > FLOOD_DEPTH ? PLACE.cm(r.depth) : r.depth > 0.02 ? PLACE.shallow : PLACE.noFlood;
 
+/** ระดับโอกาส: 0 ต่ำ (< 20%), 1 ปานกลาง (20–50%), 2 สูง (> 50%) */
+const level = (chance: number) => (chance > 0.5 ? 2 : chance >= 0.2 ? 1 : 0);
+const pctOf = (d: ForecastDay) => Math.round(d.chance * 100);
+const dateText = (date: string, o: Intl.DateTimeFormatOptions) =>
+  new Date(date + 'T00:00:00Z').toLocaleDateString('th-TH', { timeZone: 'UTC', ...o });
+
+/** สถานะส่วนพยากรณ์ของการ์ด */
+export type ForecastState = 'idle' | 'loading' | 'error' | ForecastResult | null;
+
+function forecastHtml(fc: ForecastState): string {
+  if (fc === 'idle' || fc === null) return '';
+  if (fc === 'loading')
+    return `<div class="fc"><div class="k">${PLACE.fcTitle}</div><div class="loading">${PLACE.fcLoading}</div></div>`;
+  if (fc === 'error')
+    return `<div class="fc"><div class="k">${PLACE.fcTitle}</div><div class="err"><span>${PLACE.fcError}</span><button type="button" class="retry">${PLACE.fcRetry}</button></div></div>`;
+  const [tm, ...rest] = fc.days;
+  if (!tm) return '';
+  const need =
+    tm.rainNeeded === 0
+      ? PLACE.fcNeedExt
+      : tm.rainNeeded == null
+        ? PLACE.fcNeedNone
+        : PLACE.fcNeed(tm.rainNeeded);
+  const depth =
+    tm.depthP90 > FLOOD_DEPTH ? `<div class="in">${PLACE.fcDepth(PLACE.cm(tm.depthP90))}</div>` : '';
+  const days = rest
+    .map((d) => {
+      const p = pctOf(d);
+      const title = PLACE.fcDayTitle(
+        dateText(d.date, { weekday: 'long', day: 'numeric', month: 'short' }),
+        p,
+        d.rainMax,
+      );
+      return `<li class="lvl-${level(d.chance)}" title="${title}"><span>${dateText(d.date, { weekday: 'short' })}</span><span class="cb"><i style="height:${Math.max(p, 0)}%"></i></span><b>${p}%</b></li>`;
+    })
+    .join('');
+  const fetched = new Date(fc.fetched).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  return `<div class="fc">
+      <div class="k">${PLACE.fcTitle}</div>
+      <div class="tm lvl-${level(tm.chance)}" title="${PLACE.fcChanceHint(tm.members)}">
+        <div class="pc">${pctOf(tm)}%</div><div class="lv">${PLACE.fcLevels[level(tm.chance)]} ${causeChip(tm.cause)}</div>
+        <div class="tl">${PLACE.fcTomorrow(dateText(tm.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</div>
+      </div>
+      ${depth}
+      <div class="in">${PLACE.fcInputs(tm.rainMax, tm.tide, tm.flow)}</div>
+      <div class="need">${need}</div>
+      ${days ? `<ol>${days}</ol>` : ''}
+      <p class="fine">${PLACE.fcFetched(fetched)} · ${PLACE.fcSource}<br>${PLACE.fcNote}</p>
+    </div>`;
+}
+
 export interface PromptActions {
   onGps: () => void;
   onPin: () => void;
   onLater: () => void;
 }
 
-export function createPlaceCard(root: HTMLElement, actions: { onGoTo: () => void; onClear: () => void }) {
+export function createPlaceCard(
+  root: HTMLElement,
+  actions: { onGoTo: () => void; onClear: () => void; onRetryForecast: () => void },
+) {
   root.hidden = true;
   let loc: PickedLocation | null = null;
   let probe: ProbeResult | null = null;
   let loading = false;
   let now: CellReading | null = null;
+  let forecast: ForecastState = 'idle';
   /** การ์ดชวน (ยังไม่มีตำแหน่ง) — แสดงเมื่อเปิดโหมดพื้นที่ศึกษาครั้งแรก */
   let prompt: PromptActions | null = null;
 
@@ -98,6 +154,7 @@ export function createPlaceCard(root: HTMLElement, actions: { onGoTo: () => void
       <div class="meta">${meta.map((m) => `<div>${m}</div>`).join('')}</div>
       ${special ? `<div class="note">${special}</div>` : ''}
       ${nowHtml}
+      ${land ? forecastHtml(forecast) : ''}
       ${loading ? `<div class="loading">${PLACE.probing}</div>` : ''}
       ${rows ? `<table><thead><tr><th>${PLACE.colScenario}</th><th>${PLACE.colDepth}</th><th>${PLACE.colCause}</th></tr></thead><tbody>${rows}</tbody></table>` : ''}
       ${summary ? `<p class="sum">${summary}</p>` : ''}
@@ -106,6 +163,8 @@ export function createPlaceCard(root: HTMLElement, actions: { onGoTo: () => void
     root.querySelector<HTMLButtonElement>('.x')!.onclick = () => (root.hidden = true);
     root.querySelector<HTMLButtonElement>('.go')!.onclick = actions.onGoTo;
     root.querySelector<HTMLButtonElement>('.clr')!.onclick = actions.onClear;
+    const retry = root.querySelector<HTMLButtonElement>('.retry');
+    if (retry) retry.onclick = actions.onRetryForecast;
   }
 
   return {
@@ -115,12 +174,18 @@ export function createPlaceCard(root: HTMLElement, actions: { onGoTo: () => void
       if (l) prompt = null;
       probe = null;
       now = null;
+      forecast = 'idle';
       loading = !!l;
       render();
     },
     setProbe(p: ProbeResult | null): void {
       probe = p;
       loading = false;
+      render();
+    },
+    /** ส่วนพยากรณ์พรุ่งนี้ + 7 วัน */
+    setForecast(f: ForecastState): void {
+      forecast = f;
       render();
     },
     /** ค่าจากผลการจำลองปัจจุบัน (อัปเดตเมื่อขยับแถบเลื่อน) */

@@ -13,6 +13,7 @@
   --north: #d9822b;
   --warn: #c2410c;
   --ok: #15803d;
+  --caution: #ca8a04;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
@@ -667,6 +668,104 @@ details p {
   color: var(--muted);
   font-size: 10.5px;
   margin: 8px 0 0;
+}
+#place .fc {
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-top: 8px;
+}
+#place .fc .k {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+#place .fc .lvl-0 {
+  --lvl: var(--ok);
+}
+#place .fc .lvl-1 {
+  --lvl: var(--caution);
+}
+#place .fc .lvl-2 {
+  --lvl: var(--warn);
+}
+#place .fc .tm {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 0 10px;
+  margin: 4px 0 2px;
+}
+#place .fc .tm .pc {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--lvl);
+  font-variant-numeric: tabular-nums;
+  grid-row: span 2;
+}
+#place .fc .tm .lv {
+  font-weight: 600;
+  color: var(--lvl);
+}
+#place .fc .tm .tl {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+#place .fc .in,
+#place .fc .need {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+#place .fc .need b {
+  color: var(--ink);
+  font-weight: 600;
+}
+#place .fc ol {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 0;
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+#place .fc ol .cb {
+  display: flex;
+  align-items: flex-end;
+  height: 28px;
+  margin: 2px 0;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+#place .fc ol .cb i {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  background: var(--lvl);
+}
+#place .fc ol b {
+  font-weight: 600;
+  color: var(--lvl);
+}
+#place .fc .err {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+}
+#place .fc .err button {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  color: var(--ink);
+  cursor: pointer;
 }
 @media (max-width: 820px) {
   #place {

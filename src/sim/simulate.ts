@@ -70,6 +70,20 @@ export interface SimResult {
 export const riverLevel = (P: SimParams, s: number): number =>
   P.tide * (1 - 0.3 * s) + Math.pow(P.flow / 1000, 1.2) * 0.28 * (0.2 + s);
 
+/** ขีดความสามารถระบายน้ำฝน (มม./ชม.) — ลดลงเมื่อแม่น้ำ/ทะเลสูง; ฝนที่ไม่เกินค่านี้ไม่ขัง */
+export const drainCap = (P: SimParams, riverMid: number): number =>
+  (P.drains ? 60 : 25) *
+  clamp(1 - Math.max(0, riverMid - 1.6) * 0.5 - Math.max(0, P.tide - 1.4) * 0.4, 0.35, 1);
+
+/**
+ * น้ำฝนขังที่ช่องหนึ่ง (ม.) จากฝนส่วนเกิน `excess` (มม.) — ไม่ขึ้นกับน้ำภายนอกนอกจาก `ext` ของช่องนั้น
+ * ถ้าน้ำภายนอกเข้าถึงแล้ว นับน้ำฝนเพียง 30% (กรณีขอบ: อาจทำให้ความลึกรวมลดลง ดู CLAUDE.md)
+ */
+export const pondedRain = (excess: number, pond: number, ext: number): number => {
+  const r = (excess / 1000) * pond;
+  return ext > 0 ? r * 0.3 : r;
+};
+
 /** ความสูงสันเขื่อน/คันกั้นน้ำหลังทรุด */
 export const wallTop = (g: Grid, P: SimParams, c: number): number =>
   g.wallBase[c] - (P.subs / 100) * g.subW[c];
@@ -174,9 +188,7 @@ export function simulate(g: Grid, P: SimParams, boundary?: Boundary): SimResult 
       }
   }
   const riverMid = riverLevel(P, g.pktS);
-  const cap =
-    (P.drains ? 60 : 25) *
-    clamp(1 - Math.max(0, riverMid - 1.6) * 0.5 - Math.max(0, P.tide - 1.4) * 0.4, 0.35, 1);
+  const cap = drainCap(P, riverMid);
   const excess = Math.max(0, P.rain - cap) * P.dur; // มม.
 
   let area = 0,
@@ -191,10 +203,8 @@ export function simulate(g: Grid, P: SimParams, boundary?: Boundary): SimResult 
       continue;
     }
     const e = reach[c] > hEff[c] ? reach[c] - hEff[c] : 0;
-    const r = (excess / 1000) * pond[c];
     tExt[c] = e;
-    // ถ้าน้ำภายนอกเข้าถึงแล้ว นับน้ำฝนเพียง 30% (กรณีขอบ: อาจทำให้ความลึกรวมลดลง ดู CLAUDE.md)
-    tRain[c] = e > 0 ? r * 0.3 : r;
+    tRain[c] = pondedRain(excess, pond[c], e);
     if (tExt[c] > 0) maxArr = Math.max(maxArr, arrival[c]);
     if (intertidal[c]) continue;
     landCells++;

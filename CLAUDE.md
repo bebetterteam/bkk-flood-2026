@@ -18,6 +18,7 @@ npm run data:fetch    # ดึง DEM + OSM ดิบ → data/raw/ (gitignored)
 npm run data:build    # → public/data/study-area/
 npm run data:report   # → reports/phase-a.md + reports/dem-preview.png
 npm run data          # ทั้งสามขั้น
+npm run data:forecast # ค่าปกติน้ำเหนือ GloFAS → config/forecast.json (MVP 6, รันครั้งเดียว ผลลัพธ์ commit ไว้แล้ว)
 ```
 
 ## โครงสร้าง
@@ -157,6 +158,19 @@ DEM (FABDEM/Copernicus) อ้างอิง geoid EGM2008 แต่แบบ�
 - **ความเป็นส่วนตัว:** ตำแหน่งอยู่ในหน่วยความจำของหน้าเท่านั้น — ห้ามส่ง network/เก็บลง storage/ใส่ใน URL
 - ทดสอบใน headless Chrome: `visual-check.mjs` ขั้น `{ "geo": [lat, lon, acc] | "deny" }` แทนที่ `getCurrentPosition` ในหน้า
   (headless ปฏิเสธคำขอตำแหน่งอัตโนมัติ และ `Browser.setPermission` ไม่มีผล)
+
+## พยากรณ์ "พรุ่งนี้ + 7 วัน" ในการ์ดหมุด (MVP 6)
+
+- `src/data/forecast.ts` ดึง Open-Meteo (ฟรี ไม่มี key, CC BY 4.0) 3 คำขอ ณ **จุดคงที่** ใน `config/forecast.json` เท่านั้น
+  (ห้ามส่งตำแหน่งหมุด — เลือกจุดฝนใกล้สุดทำใน worker) เก็บในหน่วยความจำ 1 ชม.:
+  ฝน = Ensemble API `ecmwf_ifs025` 51 ชุด ที่ 4 จุด (0.25°), ทะเลหนุน = Marine `sea_level_height_msl` ปากแม่น้ำ, น้ำเหนือ = Flood API (GloFAS) บางไทร 14.00, 100.53
+- `src/sim/forecast.ts` (pure): รายวัน (เวลาไทย) tide = ระดับทะเลสูงสุด, flow = `1000 + (Q − ค่าปกติของวัน) × k`
+  (k ตั้งให้ยอดปี 2554 ของ GloFAS = 3,800; GloFAS ที่จุดนี้อ่านสูงกว่าสถานีจริงราว 2 เท่า, ค่าปกติ = มัธยฐาน 1997–2024 ±15 วัน),
+  ฝน = ช่วง 3 ชม. ที่มากที่สุด → `rain` (dur 3); ระบบป้องกันเปิดทั้งหมด
+- ฝนไม่เปลี่ยน `reach`/`tExt` → จำลองวันละครั้งแบบไม่มีฝน แล้วบวกน้ำฝนขังรายสมาชิกด้วย `pondedRain` + `drainCap` ที่แยกจาก `simulate.ts`
+  (ผลเท่ากับจำลองเต็มทุกหลัก — มีเทสต์) ~70 ms ต่อหมุดในพื้นที่ศึกษา
+- โอกาส = สัดส่วนสมาชิกที่ลึก > 10 ซม.; แสดง `rainNeeded` (ฝนต้องแรงเท่าไรจุดนี้จึงท่วม) เพราะ ensemble ~25 กม. เกลี่ยพายุเฉพาะจุดจนฝนแรงสุดมักเพียง 1–15 มม./ชม.
+  ขณะที่ขีดระบาย ~45–60 มม./ชม. — โอกาสจากฝนจึงมักเป็น 0% (ข้อจำกัดของข้อมูล ไม่ได้ปรับ/ขยายค่าฝน)
 
 ## หน่วยและระบบพิกัด
 

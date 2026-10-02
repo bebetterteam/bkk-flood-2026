@@ -30,6 +30,7 @@ import { createTopbar, type AppMode } from './ui/topbar';
 import { enableSpacePan } from './ui/spacePan';
 import { createLocate, type PickedLocation } from './ui/locate';
 import { createPlaceCard } from './ui/placeCard';
+import { fetchForecast } from './data/forecast';
 import { createMarker } from './scene/marker';
 import { groundPoint } from './scene/pick';
 import { cellOf, readCell } from './sim/probe';
@@ -300,7 +301,21 @@ const card = createPlaceCard($('place'), {
     marker.set(null);
     card.setLocation(null);
   },
+  onRetryForecast: () => place && void loadForecast(place),
 });
+/** พยากรณ์ที่หมุด — ดึงข้อมูลจากจุดคงที่ (ไม่ส่งตำแหน่ง) แล้วคำนวณที่จุดใน worker */
+async function loadForecast(p: PickedLocation): Promise<void> {
+  card.setForecast('loading');
+  try {
+    const input = await fetchForecast();
+    if (place !== p) return;
+    const res = await client.forecast(p.lat, p.lon, input);
+    if (place === p) card.setForecast(res);
+  } catch (err) {
+    console.warn('[forecast]', (err as Error).message);
+    if (place === p) card.setForecast('error');
+  }
+}
 async function goToLocation(p: PickedLocation): Promise<void> {
   if (cellOf(grid, p.lat, p.lon) < 0) {
     locate.setPicking(true); // เปิดโหมดปักหมุดให้เลย (ข้อความนอกพื้นที่แทนคำแนะนำปักหมุด)
@@ -316,7 +331,9 @@ async function goToLocation(p: PickedLocation): Promise<void> {
   flyTo(p.lat, p.lon);
   updatePlaceNow();
   const res = await client.probe(p.lat, p.lon);
-  if (place === p) card.setProbe(res);
+  if (place !== p) return;
+  card.setProbe(res);
+  if (res?.kind === 0) void loadForecast(p);
 }
 const locate = createLocate($('topbar'), {
   canvas: renderer.domElement,
