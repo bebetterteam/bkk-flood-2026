@@ -11,6 +11,7 @@ import { createWater } from '../water';
 import { createWalls } from '../walls';
 import { createLabels } from '../labels';
 import { createRain, createRiverFlow } from '../particles';
+import { createInfra } from '../infra';
 import { buildBuildingTiles, type BuildingArrays } from './buildingGeometry';
 
 /** สเกลสีความสูงของพื้นที่ศึกษา [ม., สี] (ช่วงกว้างกว่าภาพรวมเพราะ DEM ยังไม่ได้ปรับ datum) */
@@ -133,6 +134,8 @@ export function createStudyScene(
     f,
     3,
   );
+  // สถานีสูบ/อุโมงค์ (วางอุโมงค์บนพื้นให้มองเห็น — ของจริงอยู่ใต้ดิน)
+  const infra = createInfra(group, f, { r: 4, h: 10, tube: 2, tunnelOnGround: true });
   const rnd = (() => {
     let a = 7;
     return () => {
@@ -165,6 +168,7 @@ export function createStudyScene(
     // ตึกทรุดตามพื้น (subW ในพื้นที่นี้คงที่ — ใช้ค่าเฉลี่ย)
     bGroup.position.y = -(P.subs / 100) * meanSubW * f.vex;
     walls.update(hEff, P);
+    infra.update(hEff, P);
   }
   let meanSubW = 0;
   for (let c = 0; c < nx * nz; c++) meanSubW += grid.subW[c] / (nx * nz);
@@ -187,7 +191,10 @@ export function createStudyScene(
     labels,
     buildings: arrays,
     updateTerrain,
-    updateWalls: walls.update,
+    updateWalls(hEff, P) {
+      walls.update(hEff, P);
+      infra.update(hEff, P);
+    },
     tick(dt, P) {
       rain.tick(dt, P);
       flow.tick(dt, P);
