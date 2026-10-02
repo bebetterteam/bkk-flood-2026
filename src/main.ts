@@ -390,10 +390,11 @@ function tick(): void {
   camTween.tick(dt);
   controls.update();
   if (sim) {
-    topbar.setMoving(activeWater().update(dt, sim));
+    const waterMoving = activeWater().update(dt, sim);
+    topbar.setMoving(waterMoving);
     if (mode === 'study') {
       study!.tick(dt, P);
-      realistic?.tick(dt, P, camera, controls.target);
+      realistic?.tick(dt, P, camera, controls.target, sim, waterMoving);
       study!.labels.update(camera, showLabels, sim.hEff, study!.water.cur, P);
     } else {
       rain.tick(dt, P);

@@ -7,7 +7,7 @@ const meta = JSON.parse(readFileSync(DIR + 'buildings.json', 'utf8'));
 const buf = readFileSync(DIR + 'buildings.bin');
 const bin = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 
-it('สร้าง geometry ตึกได้ครบ ไม่มีค่าผิดปกติ และเร็วพอ (< 3 วินาที)', () => {
+it('สร้าง geometry ตึกได้ครบ ไม่มีค่าผิดปกติ และไม่ช้าผิดปกติ', () => {
   const t = performance.now();
   const { tiles } = buildBuildingTiles(
     meta,
@@ -17,7 +17,8 @@ it('สร้าง geometry ตึกได้ครบ ไม่มีค่�
     0.1,
   );
   const ms = performance.now() - t;
-  expect(ms).toBeLessThan(3000);
+  // ปกติ ~0.1–0.5 วิ; เกณฑ์หลวมไว้ 10 วิ เพราะรันพร้อมเทสต์อื่นแล้ว CPU แย่งกัน — กันแค่กรณีช้าผิดปกติจริง
+  expect(ms).toBeLessThan(10_000);
   const seen = new Set<number>();
   let tris = 0,
     badIndex = 0,

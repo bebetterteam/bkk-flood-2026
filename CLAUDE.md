@@ -131,6 +131,20 @@ DEM (FABDEM/Copernicus) อ้างอิง geoid EGM2008 แต่แบบ�
 - OpenStreetMap — ODbL ต้องแสดง "© OpenStreetMap contributors"
 - ห้ามใช้ Google 3D Tiles หรือ API ที่ต้องใช้ key/เสียเงิน; ห้าม commit ไฟล์ดิบ (`data/raw/`)
 
+## น้ำท่วมแบบสมจริง (MVP 5) — `src/scene/realistic/flood/`
+
+- `fields.ts` (pure): `waterLevel()` ขยายระดับน้ำข้ามแนวฝั่ง 2 ชั้น (ช่องแห้งที่เหลือ = พื้น − 1.5 ม.), `flowField()` แม่น้ำตามแนว `RIVER`
+  ไปปากอ่าว (แรงตามน้ำเหนือ) / น้ำท่วมไหลลงตามความลาด
+- `floodWater.ts`: mesh กริดเดียวกับพื้น (y = ระดับน้ำ) + texture float RGBA ต่อช่อง (ระดับ, พื้น, flow x/z) อ่านแบบ bilinear ด้วย
+  `texelFetch` (ไม่พึ่ง float linear filtering); shader: ความหนาต่อพิกเซล → `discard` ขอบเรียบ, ความทึบแบบ Beer–Lambert
+  (น้ำกรุงเทพฯ ขุ่น: 30 ซม. แทบทึบ), ตะกอน, ฟอง (ขอบตื้น/รอบตึกจาก mask footprint 4 ม./ทางตามกระแส), flow map 2 เฟส,
+  วงกระเพื่อมฝน; รายละเอียดเล็กจางตาม `fwidth` กันภาพกระพริบที่ระยะไกล; อัปโหลด texture เฉพาะตอนน้ำเคลื่อน/ผลเปลี่ยน
+- ผนังตึก (`materials.ts`): โทนโคลนใต้น้ำ, แถบเปียก ~0.45 ม. เหนือน้ำ, เส้นคราบที่ระดับสูงสุดที่เคยแสดง (`uMax`, ไม่รีเซ็ต)
+- `props.ts`: รถจอดริมถนน (≤ 5,000 คัน มาตราส่วนจริง ไม่จอดบนสะพาน/ราง) บอกความลึก; ขยะลอยน้ำ 1,500 ชิ้นในช่องลึก > 30 ซม.
+- `reflection.ts`: planar reflection ที่ระดับน้ำ ณ จุดที่กล้องมอง (oblique clip แบบ three `Reflector`) **เฉพาะ "สมจริง+"**
+  (เรนเดอร์ฉากซ้ำครึ่งความละเอียด ไม่เรนเดอร์เงาซ้ำ); รถทอดเงาเฉพาะ "สมจริง+"
+- fps ใน headless Chrome (software GL, ใช้ดูแนวโน้ม): ก่อน 45 → สมจริง ~36, สมจริง+ ~23
+
 ## ตำแหน่งของผู้ใช้ "ที่นี่ท่วมไหม?" (MVP 4)
 
 - `src/ui/locate.ts`: GPS (`getCurrentPosition`, ไม่ใช้ watchPosition) หรือปักหมุด (คลิกที่ลากไม่เกิน 5 px, Esc ยกเลิก)

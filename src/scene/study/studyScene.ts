@@ -147,7 +147,7 @@ export function createStudyScene(
     3,
   );
   // สถานีสูบ/อุโมงค์ (วางอุโมงค์บนพื้นให้มองเห็น — ของจริงอยู่ใต้ดิน)
-  const infra = createInfra(group, f, { r: 4, h: 10, tube: 2, tunnelOnGround: true });
+  const infra = createInfra(group, f, { r: 4, h: 10, tube: 0.5, tunnelOnGround: true });
   const rnd = (() => {
     let a = 7;
     return () => {

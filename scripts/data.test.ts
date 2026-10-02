@@ -60,14 +60,20 @@ describe('ตึก', () => {
     expect(bad).toBe(0);
   });
   it('ความสูง > 0 และแหล่งที่มาถูกต้อง; ring อ้างอิงไม่เกินขอบ', () => {
+    // นับที่ผิดแล้ว assert ครั้งเดียว (expect ทีละตึก ~46 หมื่นครั้งช้าจน timeout เมื่อรันพร้อมเทสต์อื่น)
+    let bad = 0;
     for (let i = 0; i < bm.count; i++) {
-      expect(heightDm[i]).toBeGreaterThan(0);
-      expect(src[i]).toBeLessThan(3);
       const last = ringStart[i] + ringCount[i] - 1;
-      expect(last).toBeLessThan(bm.rings);
-      expect(rvs[last] + rvc[last]).toBeLessThanOrEqual(bm.vertices);
-      expect(rvc[ringStart[i]]).toBeGreaterThanOrEqual(3);
+      if (
+        !(heightDm[i] > 0) ||
+        src[i] >= 3 ||
+        last >= bm.rings ||
+        rvs[last] + rvc[last] > bm.vertices ||
+        rvc[ringStart[i]] < 3
+      )
+        bad++;
     }
+    expect(bad).toBe(0);
   });
 });
 

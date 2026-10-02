@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import type { RealisticData } from '../../data/realisticData';
 import type { StudyData } from '../../data/studyArea';
-import type { SimParams } from '../../sim/simulate';
+import type { SimParams, SimResult } from '../../sim/simulate';
 import type { StudyScene } from '../study/studyScene';
 import { STUDY_UNIT_M } from '../frame';
 import { buildRoadGeometry } from './roadGeometry';
@@ -18,10 +18,12 @@ import {
   roofFlatMaterial,
   roofTileMaterial,
   wallMaterial,
-  waterMaterial,
 } from './materials';
 import { createLighting } from './lighting';
 import { createWeather } from './weather';
+import { createFloodWater, reflShared } from './flood/floodWater';
+import { CAR_COLORS, carGeometry, createDebris, placeCars } from './flood/props';
+import { createReflection } from './flood/reflection';
 
 export type Quality = 'simple' | 'real' | 'high';
 
@@ -201,19 +203,46 @@ export async function createRealisticScene(opts: {
   trunk.castShadow = true;
   shift.add(trunk, crown);
 
-  // ---- น้ำ: เปลี่ยน material ของ mesh น้ำเดิม (ต้องมี UV สำหรับ normal map) ----
+  // ---- น้ำท่วมแบบสมจริง (mesh ใหม่ แทน mesh น้ำแบบเรียบง่ายเมื่อเปิดโหมดนี้) ----
   const wm = study.water.mesh;
+  const flood = createFloodWater(root, f, grid, studyData.buildings, tx);
+
+  // ---- รถจอดริมถนน (บอกขนาดความลึก: 30 ซม. ท่วมล้อ, 1 ม. ท่วมกระจก) ----
+  const carPos = placeCars(rm, data.roads.bin, 5000);
+  const nCar = carPos.length / 4;
+  const cars = new THREE.InstancedMesh(
+    carGeometry().scale(unit, unit, unit),
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.35,
+      metalness: 0.25,
+      envMapIntensity: 0.8,
+    }),
+    nCar,
+  );
   {
-    const p = wm.geometry.attributes.position.array as Float32Array;
-    const uv = new Float32Array((p.length / 3) * 2);
-    for (let c = 0; c < p.length / 3; c++) {
-      uv[c * 2] = (p[c * 3] * STUDY_UNIT_M) / 40;
-      uv[c * 2 + 1] = (p[c * 3 + 2] * STUDY_UNIT_M) / 40;
+    const m = new THREE.Matrix4(),
+      q = new THREE.Quaternion(),
+      up = new THREE.Vector3(0, 1, 0),
+      one = new THREE.Vector3(1, 1, 1),
+      p = new THREE.Vector3(),
+      c = new THREE.Color();
+    for (let k = 0; k < nCar; k++) {
+      const [xm, ym, ang, hue] = carPos.subarray(k * 4, k * 4 + 4);
+      const [x, z] = toWorld(xm, ym);
+      p.set(x, groundY(xm, ym), z);
+      cars.setMatrixAt(k, m.compose(p, q.setFromAxisAngle(up, ang), one));
+      cars.setColorAt(k, c.setHex(CAR_COLORS[Math.floor(hue * CAR_COLORS.length) % CAR_COLORS.length]));
     }
-    wm.geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   }
-  const simpleWaterMat = wm.material;
-  const realWaterMat = waterMaterial(tx);
+  cars.receiveShadow = true;
+  shift.add(cars);
+
+  // ---- ขยะลอยน้ำ + เงาสะท้อน (สมจริง+) ----
+  const debris = createDebris(root, f, grid.cellM, unit, flood.levelAt, flood.flowAt);
+  const refl = createReflection(renderer);
+  reflShared.uRefl.value = refl.texture;
+  reflShared.uReflMat.value = refl.textureMatrix;
 
   // ---- แสง ท้องฟ้า ฝน ----
   const [W, D] = study.size;
@@ -233,7 +262,8 @@ export async function createRealisticScene(opts: {
     root.visible = on;
     for (const o of study.internals.simpleObjects) o.visible = !on;
     for (const l of opts.stageLights) l.visible = !on;
-    wm.material = on ? realWaterMat : simpleWaterMat;
+    wm.visible = !on;
+    flood.mesh.visible = on;
     scene.environment = on ? light.envMap : null;
     renderer.shadowMap.enabled = on;
     renderer.shadowMap.type = q === 'high' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
@@ -241,6 +271,9 @@ export async function createRealisticScene(opts: {
     renderer.toneMappingExposure = on ? 0.75 : saved.exposure;
     light.setShadowQuality(q === 'high' ? 4096 : 2048);
     crown.castShadow = q === 'high';
+    cars.castShadow = q === 'high';
+    refl.setEnabled(q === 'high');
+    reflShared.uReflOn.value = q === 'high' ? 1 : 0;
     renderer.setPixelRatio(q === 'high' ? Math.min(devicePixelRatio, 2) : Math.min(devicePixelRatio, 1.5));
     if (!on) renderer.setPixelRatio(saved.pixelRatio);
   }
@@ -250,10 +283,34 @@ export async function createRealisticScene(opts: {
     shift.position.y = study.internals.subsidenceY();
   }
 
-  function tick(dt: number, P: SimParams, camera: THREE.Camera, target: THREE.Vector3): void {
+  /** sim: ผลการจำลองปัจจุบัน, moving: น้ำกำลังเปลี่ยนระดับ (ต้องคำนวณผิวน้ำใหม่) */
+  function tick(
+    dt: number,
+    P: SimParams,
+    camera: THREE.Camera,
+    target: THREE.Vector3,
+    sim: SimResult | null,
+    moving: boolean,
+  ): void {
     if (!active) return;
     light.follow(camera, target);
     weather.tick(dt, P.rain, target);
+    if (!sim) return;
+    flood.tick(dt, sim, study.water.cur, P.rain, P.flow, moving);
+    debris.tick(dt, sim, sim.hEff, grid.kind, true);
+    if (refl.isEnabled()) {
+      // ระนาบสะท้อน = ระดับน้ำที่จุดที่กล้องมอง (ถ้าตรงนั้นมีน้ำ)
+      const c = f.cellAt(f.latOfZ(target.z), f.lonOfX(target.x));
+      const lvl = flood.levelAt(c);
+      const wet = grid.kind[c] !== 0 || lvl - sim.hEff[c] > 0.02;
+      reflShared.uReflOn.value = wet ? 1 : 0;
+      if (wet)
+        refl.render(scene, camera as THREE.PerspectiveCamera, lvl * f.vex, [
+          flood.mesh,
+          weather.lines,
+          debris.mesh,
+        ]);
+    }
   }
 
   return { setQuality, update, tick, isActive: () => active };

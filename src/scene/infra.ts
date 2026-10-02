@@ -31,7 +31,11 @@ export function createInfra(
   const tunnelPts = TUNNEL.map(([la, lo]) => new THREE.Vector3(f.wx(lo), 0, f.wz(la)));
   const tunnel = new THREE.Mesh(
     new THREE.TubeGeometry(new THREE.CatmullRomCurve3(tunnelPts), 20, style.tube, 8),
-    new THREE.MeshStandardMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.85 }),
+    new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      transparent: true,
+      opacity: style.tunnelOnGround ? 0.6 : 0.85,
+    }),
   );
   group.add(tunnel);
 

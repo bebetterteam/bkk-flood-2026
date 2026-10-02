@@ -1,13 +1,8 @@
 /** ตรวจว่า onBeforeCompile ของวัสดุโหมดสมจริงแทนที่ chunk ได้จริงใน shader ของ three.js เวอร์ชันที่ใช้ */
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import {
-  groundMaterial,
-  roadMaterial,
-  wallMaterial,
-  waterMaterial,
-  type Textures,
-} from '../src/scene/realistic/materials';
+import { groundMaterial, roadMaterial, wallMaterial, type Textures } from '../src/scene/realistic/materials';
+import { floodMaterial } from '../src/scene/realistic/flood/floodWater';
 
 const t = () => new THREE.Texture();
 const tx = Object.fromEntries(
@@ -60,9 +55,20 @@ describe('shader ของโหมดสมจริง', () => {
     expect(sh.fragmentShader).toContain('float lanes = floor(vRoad.w / 16.0)');
     expect(sh.fragmentShader).toContain('roughnessFactor = mix(roughnessFactor, 0.18, uWet)');
   });
-  it('น้ำ: normal map 2 ชั้นเคลื่อนไหว', () => {
-    const sh = compile(waterMaterial(tx));
-    expect(sh.fragmentShader).toContain('uTime * 0.012');
-    expect(sh.fragmentShader).not.toContain('#include <normal_fragment_maps>');
+  it('น้ำท่วม: ความหนาต่อพิกเซล, flow map, ฝน, ฟอง', () => {
+    const sh = compile(floodMaterial(tx));
+    expect(sh.vertexShader).toContain('vWPos = (modelMatrix');
+    expect(sh.fragmentShader).toContain('gThick = F.r - F.g');
+    expect(sh.fragmentShader).toContain('if (gThick < 0.004) discard');
+    expect(sh.fragmentShader).toContain('rainRipples(');
+    expect(sh.fragmentShader).toContain('roughnessFactor = mix(0.07 + uRain');
+    expect(sh.fragmentShader).toContain('normal = normalize((viewMatrix * vec4(wn, 0.0)).xyz)');
+    expect(sh.uniforms.uField).toBeDefined();
+  });
+  it('ผนัง: คราบน้ำและเส้นระดับน้ำสูงสุด', () => {
+    const sh = compile(wallMaterial(tx));
+    expect(sh.vertexShader).toContain('vWPos = (modelMatrix');
+    expect(sh.fragmentShader).toContain('float under = wet');
+    expect(sh.uniforms.uMax).toBeDefined();
   });
 });

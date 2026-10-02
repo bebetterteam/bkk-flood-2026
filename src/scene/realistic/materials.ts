@@ -5,6 +5,7 @@
  * - ถนน: เส้นจราจร (กึ่งกลางเหลือง/แบ่งเลน/ขอบทาง) และรางรถไฟ
  */
 import * as THREE from 'three';
+import { FIELD_GLSL, floodShared } from './flood/floodShared';
 
 export interface Textures {
   asphalt: THREE.Texture;
@@ -142,16 +143,21 @@ export function wallMaterial(tx: Textures): THREE.MeshStandardMaterial {
   });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uWet = shared.uWet;
+    Object.assign(sh.uniforms, floodShared);
     sh.vertexShader = sh.vertexShader
       .replace(
         '#include <common>',
-        '#include <common>\nattribute float facade;\nvarying float vFacade;\nvarying vec2 vWallUv;',
+        '#include <common>\nattribute float facade;\nvarying float vFacade;\nvarying vec2 vWallUv;\nvarying vec3 vWPos;',
       )
-      .replace('#include <uv_vertex>', '#include <uv_vertex>\nvFacade = facade;\nvWallUv = uv;');
+      .replace('#include <uv_vertex>', '#include <uv_vertex>\nvFacade = facade;\nvWallUv = uv;')
+      .replace(
+        '#include <project_vertex>',
+        '#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+      );
     sh.fragmentShader = sh.fragmentShader
       .replace(
         '#include <common>',
-        `#include <common>\nuniform float uWet;\nvarying float vFacade;\nvarying vec2 vWallUv;\nfloat winMask = 0.0;\n${AA}`,
+        `#include <common>\nuniform float uWet;\nvarying float vFacade;\nvarying vec2 vWallUv;\nvarying vec3 vWPos;\nfloat winMask = 0.0;\n${AA}\n${FIELD_GLSL}`,
       )
       .replace(
         '#include <map_fragment>',
@@ -172,7 +178,22 @@ export function wallMaterial(tx: Textures): THREE.MeshStandardMaterial {
           // ขอบหน้าต่างและคราบฝน
           diffuseColor.rgb *= 1.0 - 0.08 * (1.0 - smoothstep(0.0, 0.08, f.y));
         }
-        diffuseColor.rgb *= mix(1.0, 0.8, uWet);`,
+        diffuseColor.rgb *= mix(1.0, 0.8, uWet);
+        {
+          // คราบน้ำท่วมบนผนัง: ใต้ผิวน้ำโทนโคลน, แถบเปียกเหนือผิวน้ำ ~0.4 ม., เส้นคราบที่ระดับสูงสุดที่เคยท่วม
+          vec4 F = fieldAt(uField, vWPos.xz);
+          float unit = 1.0 / uUnitM; // 1 ม. ในหน่วยโลก (ตึกใช้มาตราส่วนจริง)
+          float wl = F.r * uVex;
+          float wet = step(0.02, F.r - F.g);
+          float under = wet * (1.0 - smoothstep(wl - 0.02 * unit, wl, vWPos.y));
+          float band = wet * (1.0 - smoothstep(wl, wl + 0.45 * unit, vWPos.y)) * step(wl, vWPos.y);
+          float mx = fieldAt(uMax, vWPos.xz).r * uVex;
+          float grime = step(vWPos.y, mx) * step(-50.0, mx);
+          float line = (1.0 - smoothstep(0.0, 0.05 * unit, abs(vWPos.y - mx))) * step(-50.0, mx);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.72, 0.64, 0.5), max(under, grime * 0.55));
+          diffuseColor.rgb *= 1.0 - 0.38 * band - 0.35 * line;
+          winMask *= 1.0 - under;
+        }`,
       )
       .replace(
         '#include <roughnessmap_fragment>',
@@ -276,43 +297,6 @@ export function roadMaterial(tx: Textures): THREE.MeshStandardMaterial {
       .replace(
         '#include <roughnessmap_fragment>',
         '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.18, uWet);\nroughnessFactor = mix(roughnessFactor, 0.5, paintMask);',
-      );
-  };
-  return m;
-}
-
-/** น้ำท่วม/แม่น้ำ: ใช้สีตามความลึกจาก vertex color + normal map เคลื่อนไหว + สะท้อน env map */
-export function waterMaterial(tx: Textures): THREE.MeshStandardMaterial {
-  tx.water.repeat.set(1, 1);
-  const m = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.94,
-    roughness: 0.07,
-    metalness: 0,
-    envMapIntensity: 1.0,
-    normalMap: tx.water,
-    normalScale: new THREE.Vector2(0.35, 0.35),
-    depthWrite: false,
-  });
-  m.onBeforeCompile = (sh) => {
-    sh.uniforms.uTime = shared.uTime;
-    sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uTime;')
-      .replace(
-        '#include <color_fragment>',
-        /* glsl */ `#include <color_fragment>
-        // แปลงสีตามความลึก (ฟ้าอ่อน = ตื้น … น้ำเงินเข้ม = ลึก) เป็นโทนน้ำขุ่นสีน้ำตาลแบบน้ำท่วมจริง
-        float wl = dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11));
-        diffuseColor.rgb = mix(vec3(0.2, 0.17, 0.1), vec3(0.62, 0.52, 0.33), smoothstep(0.05, 0.75, wl));`,
-      )
-      .replace(
-        '#include <normal_fragment_maps>',
-        /* glsl */ `
-        vec3 n1 = texture2D(normalMap, vNormalMapUv + vec2(uTime * 0.012, uTime * 0.007)).xyz * 2.0 - 1.0;
-        vec3 n2 = texture2D(normalMap, vNormalMapUv * 1.7 - vec2(uTime * 0.009, -uTime * 0.011)).xyz * 2.0 - 1.0;
-        vec3 mapN = normalize(vec3((n1.xy + n2.xy) * normalScale, n1.z * n2.z));
-        normal = normalize(tbn * mapN);`,
       );
   };
   return m;
