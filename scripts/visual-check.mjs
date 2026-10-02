@@ -7,6 +7,7 @@
  *      --user-data-dir=/tmp/bkk-chrome --window-size=1440,900 about:blank
  * 3) node scripts/visual-check.mjs http://localhost:5173/ <โฟลเดอร์ภาพ> [overview | study | study,real | ไฟล์ขั้นตอน.json]
  *    ไฟล์ .json = [{ "eval": "...", "wait": ms, "shot": "ชื่อภาพ" }] (ดู scripts/visual-check.example.json)
+ *    ขั้นตอนอื่น: { "key": "Space", "type": "keyDown"|"keyUp" }, { "drag": [x1, y1, x2, y2] }
  *    hook ที่ใช้ได้: __mode('study'|'overview'), __quality('simple'|'real'|'high'), __cam(lat, lon, dist, h), __SIM()
  */
 import { writeFileSync } from 'node:fs';
@@ -112,6 +113,42 @@ if (steps.endsWith('.json')) {
   // สคริปต์: [{eval?, wait?, shot?}]
   const { readFileSync } = await import('node:fs');
   for (const a of JSON.parse(readFileSync(steps, 'utf8'))) {
+    if (a.key) {
+      // { "key": "Space", "type": "keyDown" | "keyUp" }
+      await send('Input.dispatchKeyEvent', {
+        type: a.type,
+        code: a.key,
+        key: a.key === 'Space' ? ' ' : a.key,
+        windowsVirtualKeyCode: a.key === 'Space' ? 32 : 0,
+      });
+    }
+    if (a.drag) {
+      // { "drag": [x1, y1, x2, y2] } ลากด้วยเมาส์ซ้ายเป็น 10 ช่วง
+      const [x1, y1, x2, y2] = a.drag;
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x1, y: y1 });
+      await send('Input.dispatchMouseEvent', {
+        type: 'mousePressed',
+        x: x1,
+        y: y1,
+        button: 'left',
+        buttons: 1,
+        clickCount: 1,
+      });
+      for (let k = 1; k <= 10; k++) {
+        const x = x1 + ((x2 - x1) * k) / 10,
+          y = y1 + ((y2 - y1) * k) / 10;
+        await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'left', buttons: 1 });
+        await sleep(16);
+      }
+      await send('Input.dispatchMouseEvent', {
+        type: 'mouseReleased',
+        x: x2,
+        y: y2,
+        button: 'left',
+        buttons: 0,
+        clickCount: 1,
+      });
+    }
     if (a.eval)
       log.push(`[${stamp()} eval] ${String(await evaluate(a.eval, a.timeout ?? 60000)).slice(0, 300)}`);
     if (a.wait) await sleep(a.wait);

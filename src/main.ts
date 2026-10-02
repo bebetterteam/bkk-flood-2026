@@ -27,6 +27,7 @@ import { renderResults } from './ui/results';
 import { renderLegend } from './ui/legend';
 import { createTooltip, type TooltipContext } from './ui/tooltip';
 import { createTopbar, type AppMode } from './ui/topbar';
+import { enableSpacePan } from './ui/spacePan';
 import { STUDY } from './ui/strings';
 
 const grid = buildGrid();
@@ -57,6 +58,7 @@ const ovLabelBox = document.createElement('div'),
 $('labels').append(ovLabelBox, studyLabelBox);
 const labels = createLabels(ovLabelBox);
 const camTween = createCameraTween(camera, controls);
+enableSpacePan(controls, renderer.domElement);
 
 // ---- ฉากพื้นที่ศึกษา (โหลดเมื่อกดครั้งแรก) ----
 let study: StudyScene | null = null;
@@ -341,7 +343,8 @@ window.__run = run;
 window.__mode = setMode;
 window.__quality = setQuality;
 // dev เท่านั้น: เข้าถึง three.js สำหรับดีบัก (ไม่อยู่ใน build จริง)
-if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__three = { renderer, scene, camera };
+if (import.meta.env.DEV)
+  (window as unknown as Record<string, unknown>).__three = { renderer, scene, camera, controls };
 window.__cam = (lat, lon, dist, h) => {
   if (!study) return;
   const f = study.frame;
