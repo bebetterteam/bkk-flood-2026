@@ -1,0 +1,120 @@
+{
+ "count": 25074,
+ "vertices": 137773,
+ "coords": "Uint16 คู่ (x,y) หน่วย 0.25 ม. จากมุมตะวันตกเฉียงใต้ของ bbox",
+ "quantMeters": 0.25,
+ "extentMeters": [
+  10813.44,
+  8848
+ ],
+ "metersPerDegree": [
+  108134.41556512367,
+  110600
+ ],
+ "bbox": {
+  "south": 13.7,
+  "west": 100.48,
+  "north": 13.78,
+  "east": 100.58
+ },
+ "offsets": {
+  "lineStart": [
+   0,
+   25074
+  ],
+  "widthDm": [
+   100296,
+   25074
+  ],
+  "lineCount": [
+   150444,
+   25074
+  ],
+  "verts": [
+   200592,
+   275546
+  ],
+  "liftDm": [
+   751684,
+   137773
+  ],
+  "cls": [
+   1027232,
+   25074
+  ],
+  "lanes": [
+   1052308,
+   25074
+  ],
+  "flags": [
+   1077384,
+   25074
+  ]
+ },
+ "classes": [
+  "motorway",
+  "motorway_link",
+  "trunk",
+  "trunk_link",
+  "primary",
+  "primary_link",
+  "secondary",
+  "secondary_link",
+  "tertiary",
+  "tertiary_link",
+  "unclassified",
+  "residential",
+  "living_street",
+  "service",
+  "pedestrian",
+  "busway",
+  "road",
+  "rail",
+  "subway",
+  "light_rail",
+  "monorail"
+ ],
+ "flags": {
+  "oneway": 1,
+  "bridge": 2,
+  "rail": 4
+ },
+ "units": {
+  "widthDm": "เดซิเมตร",
+  "liftDm": "ความสูงยกจากพื้น (เดซิเมตร, ค่าประมาณเพื่อแสดงผล)"
+ },
+ "liftRule": "สะพานทางด่วน/รางยกระดับ 14 ม. + 6 ม. ต่อ layer ที่เกิน 1; สะพานอื่นยาว > 120 ม. 7 ม. × layer; สะพานสั้น 1.5 ม.; ลาดที่ปลายที่ต่อกับถนนพื้นราบ (≤ 150 ม.)",
+ "byClass": {
+  "motorway": 172,
+  "motorway_link": 214,
+  "trunk": 14,
+  "trunk_link": 3,
+  "primary": 1178,
+  "primary_link": 283,
+  "secondary": 1068,
+  "secondary_link": 243,
+  "tertiary": 584,
+  "tertiary_link": 51,
+  "unclassified": 317,
+  "residential": 7463,
+  "living_street": 6,
+  "service": 12917,
+  "pedestrian": 273,
+  "busway": 36,
+  "rail": 162,
+  "subway": 70,
+  "monorail": 20
+ },
+ "stats": {
+  "kept": 25142,
+  "skippedClass": 11228,
+  "tunnel": 426,
+  "elevated": 359,
+  "flyover": 72,
+  "smallBridge": 572,
+  "withLanes": 2702,
+  "withWidth": 257
+ },
+ "attribution": "© OpenStreetMap contributors (ODbL)",
+ "generated": "2026-10-02"
+}

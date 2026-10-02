@@ -68,3 +68,18 @@ await save(
   'canals',
   `[out:json][timeout:180];(way["waterway"="canal"](${bb});way["water"="canal"](${bb});relation["water"="canal"](${bb}););out geom;`,
 );
+
+// ---- MVP 3: สำหรับโหมดสมจริง ----
+// ถนน (แบ่ง 2×2 เหมือนตึก; geometry ไม่ clip — build ตัดเอง)
+for (const [k, [a, b, c, d]] of parts.entries()) {
+  await save(`roads-${k}`, `[out:json][timeout:180];way["highway"](${a},${b},${c},${d});out geom;`);
+}
+await save(
+  'green',
+  `[out:json][timeout:180];(way["leisure"~"^(park|garden|pitch|golf_course)$"](${bb});relation["leisure"~"^(park|garden)$"](${bb});way["landuse"~"^(grass|forest|recreation_ground|meadow|village_green|cemetery)$"](${bb});relation["landuse"~"^(grass|forest|recreation_ground)$"](${bb});way["natural"~"^(wood|scrub|grassland)$"](${bb});way["amenity"="place_of_worship"]["building"!~"."](${bb}););out geom;`,
+);
+await save('trees', `[out:json][timeout:180];node["natural"="tree"](${bb});out;`);
+await save(
+  'rail',
+  `[out:json][timeout:180];way["railway"~"^(rail|subway|light_rail|monorail)$"](${bb});out geom;`,
+);

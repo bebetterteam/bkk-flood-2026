@@ -50,6 +50,26 @@
   "ringCount": [
    3004068,
    92261
+  ],
+  "roofShape": [
+   3096332,
+   92261
+  ],
+  "colour": [
+   3188596,
+   92261
+  ],
+  "roofColour": [
+   3280860,
+   92261
+  ],
+  "use": [
+   3373124,
+   92261
+  ],
+  "levels": [
+   3465388,
+   92261
   ]
  },
  "heightUnit": "dm",
@@ -63,6 +83,81 @@
   16337,
   75366
  ],
+ "style": {
+  "colour": "Uint8 index+1 ของ palette จาก building:colour (0 = ไม่มี)",
+  "roofColour": "Uint8 index+1 ของ palette จาก roof:colour (0 = ไม่มี)",
+  "palette": [
+   "#913933",
+   "#e9e7da",
+   "#de6a47",
+   "#5b553e",
+   "#9a9a9a",
+   "#f2f2f2",
+   "#d4af37",
+   "#9ac975",
+   "#919191",
+   "#ed9c6f",
+   "#eb6f10",
+   "#4f7a28",
+   "#4f78b0",
+   "#d0d2cd",
+   "#f0f0e4",
+   "#cc6333",
+   "#668f45",
+   "#f2ede6",
+   "#ebebed",
+   "#736e72",
+   "#82a8a6",
+   "#db5b3b",
+   "#4f3f37",
+   "#e3d5b8",
+   "#e7a1b0",
+   "#bfffc2",
+   "#d2b48c",
+   "#d9822b",
+   "#5f8f5a",
+   "#f7ec83",
+   "#fdfdfb",
+   "#f7f9ff",
+   "#e4eaf5",
+   "#f5a573",
+   "#edeceb"
+  ],
+  "roofShape": [
+   "ไม่ระบุ",
+   "แบน",
+   "จั่ว",
+   "ปั้นหยา",
+   "พีระมิด",
+   "อื่น ๆ"
+  ],
+  "use": [
+   "ไม่ระบุ",
+   "บ้าน",
+   "ที่อยู่อาศัยรวม",
+   "พาณิชย์/สำนักงาน",
+   "ศาสนสถาน",
+   "สาธารณะ",
+   "อุตสาหกรรม/โกดัง",
+   "หลังคา/เพิง"
+  ],
+  "levels": "จำนวนชั้น (จากแท็ก หรือ ความสูง/3.2)",
+  "counts": {
+   "colour": 48,
+   "roofColour": 25,
+   "roofShape": 91,
+   "use": [
+    59077,
+    18843,
+    2608,
+    6865,
+    1408,
+    2406,
+    195,
+    859
+   ]
+  }
+ },
  "typeNames": [
   "yes",
   "house",
@@ -137,7 +232,7 @@
   "stable"
  ],
  "attribution": "© OpenStreetMap contributors (ODbL)",
- "generated": "2026-10-01",
+ "generated": "2026-10-02",
  "dropped": {
   "tooSmall": 88,
   "outsideBbox": 0,

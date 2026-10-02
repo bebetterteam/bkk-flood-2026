@@ -4,64 +4,13 @@
  *   river.json, canals.json (lat/lon ตัดทศนิยม 6 หลัก)
  * © OpenStreetMap contributors (ODbL)
  */
-import { readFileSync, writeFileSync } from 'node:fs';
-import { OUT, RAW, loadConfig } from './lib/config.ts';
-import {
-  assembleRings,
-  clipRing,
-  projector,
-  ringArea,
-  simplifyRing,
-  type Pt,
-  type Ring,
-} from './lib/geom.ts';
+import { writeFileSync } from 'node:fs';
+import { OUT, loadConfig } from './lib/config.ts';
+import { ringArea, type Pt, type Ring } from './lib/geom.ts';
+import { loadOsm as load, osmTools, type OsmEl } from './lib/osm.ts';
 
 const cfg = loadConfig();
-const P = projector(cfg);
-const W = (cfg.bbox.east - cfg.bbox.west) * P.kx,
-  H = (cfg.bbox.north - cfg.bbox.south) * P.ky;
-
-type OsmGeom = { lat: number; lon: number }[];
-interface OsmEl {
-  type: 'way' | 'relation';
-  id: number;
-  tags?: Record<string, string>;
-  geometry?: OsmGeom;
-  members?: { type: string; role: string; geometry?: OsmGeom }[];
-}
-const load = (f: string): OsmEl[] => JSON.parse(readFileSync(RAW + 'osm/' + f, 'utf8')).elements;
-const toXY = (g: OsmGeom): Pt[] => g.map((p) => P.toXY(p.lat, p.lon));
-const openRing = (r: Pt[]): Ring => {
-  const a = r[0],
-    b = r[r.length - 1];
-  return a[0] === b[0] && a[1] === b[1] ? r.slice(0, -1) : r;
-};
-function pointInRing(x: number, y: number, r: Ring): boolean {
-  let inside = false;
-  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
-    const [xi, yi] = r[i],
-      [xj, yj] = r[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
-/** แยก outer/inner ของ relation แล้วจับ hole เข้ากับ outer ที่ครอบ */
-function polygonsOf(el: OsmEl): { outer: Ring; holes: Ring[] }[] {
-  if (el.type === 'way') return el.geometry ? [{ outer: openRing(toXY(el.geometry)), holes: [] }] : [];
-  const ways = (role: string) =>
-    (el.members ?? [])
-      .filter((m) => m.type === 'way' && m.geometry && (m.role || 'outer') === role)
-      .map((m) => toXY(m.geometry!));
-  const outers = assembleRings(ways('outer')).rings;
-  const inners = assembleRings(ways('inner')).rings;
-  const polys = outers.map((outer) => ({ outer, holes: [] as Ring[] }));
-  for (const h of inners) polys.find((p) => pointInRing(h[0][0], h[0][1], p.outer))?.holes.push(h);
-  return polys;
-}
-const clipSimplify = (r: Ring, tol: number, margin = 0) => {
-  const c = clipRing(r, -margin, -margin, W + margin, H + margin);
-  return c.length >= 3 ? simplifyRing(c, tol) : [];
-};
+const { P, W, H, toXY, polygonsOf, clipSimplify, ll } = osmTools(cfg);
 
 // ---------------- ตึก ----------------
 const parseHeight = (v?: string): number | null => {
@@ -81,6 +30,82 @@ interface B {
   h: number;
   src: number;
   type: string;
+  /** สี RGB+1 (0 = ไม่มีแท็ก) */
+  colour: number;
+  roofColour: number;
+  roofShape: number;
+  use: number;
+  levels: number;
+}
+
+// ---- สไตล์ตึกสำหรับโหมดสมจริง (MVP 3) ----
+const NAMED: Record<string, number> = {
+  white: 0xf2f2f2,
+  grey: 0x9a9a9a,
+  gray: 0x9a9a9a,
+  silver: 0xc0c0c0,
+  black: 0x333333,
+  red: 0xb5483f,
+  maroon: 0x7a2e2e,
+  brown: 0x8a5a3c,
+  orange: 0xd9822b,
+  yellow: 0xe8c95c,
+  gold: 0xd4af37,
+  beige: 0xe3d5b8,
+  tan: 0xd2b48c,
+  cream: 0xf1e6c8,
+  green: 0x5f8f5a,
+  blue: 0x4f78b0,
+  lightblue: 0x9cc3e6,
+  pink: 0xe7a1b0,
+  purple: 0x7d5ba6,
+};
+/** แปลงค่าสีจากแท็ก OSM → RGB+1 (0 = อ่านไม่ได้/ไม่มี) */
+function parseColour(v?: string): number {
+  if (!v) return 0;
+  const c = v.trim().toLowerCase();
+  let m = /^#?([0-9a-f]{6})$/.exec(c);
+  if (m) return parseInt(m[1], 16) + 1;
+  m = /^#?([0-9a-f]{3})$/.exec(c);
+  if (m)
+    return (
+      parseInt(
+        m[1].replace(/./g, (x) => x + x),
+        16,
+      ) + 1
+    );
+  return NAMED[c] !== undefined ? NAMED[c] + 1 : 0;
+}
+/** รูปหลังคา: 0 ไม่ระบุ, 1 แบน, 2 จั่ว, 3 ปั้นหยา, 4 ทรงพีระมิด, 5 อื่น ๆ */
+const ROOF: Record<string, number> = {
+  flat: 1,
+  gabled: 2,
+  'hipped-and-gabled': 2,
+  saltbox: 2,
+  hipped: 3,
+  mansard: 3,
+  pyramidal: 4,
+};
+/** การใช้งาน: 0 ไม่ระบุ, 1 บ้าน, 2 ที่อยู่อาศัยรวม, 3 พาณิชย์/สำนักงาน, 4 ศาสนสถาน, 5 สาธารณะ, 6 อุตสาหกรรม/โกดัง, 7 หลังคา/เพิง */
+function useOf(t: Record<string, string>, type: string): number {
+  if (
+    t.amenity === 'place_of_worship' ||
+    /^(temple|church|mosque|shrine|chapel|cathedral|religious)$/.test(type)
+  )
+    return 4;
+  if (/^(house|detached|semidetached_house|terrace|bungalow|hut)$/.test(type)) return 1;
+  if (/^(apartments|residential|dormitory)$/.test(type)) return 2;
+  if (/^(commercial|retail|office|hotel|supermarket)$/.test(type) || t.shop || t.office) return 3;
+  if (
+    /^(school|university|college|hospital|public|civic|government|train_station|transportation|kindergarten)$/.test(
+      type,
+    ) ||
+    t.amenity
+  )
+    return 5;
+  if (/^(industrial|warehouse|factory|manufacture)$/.test(type)) return 6;
+  if (/^(roof|shed|garage|garages|carport|kiosk|canopy)$/.test(type)) return 7;
+  return 0;
 }
 const seen = new Set<string>();
 const buildings: B[] = [];
@@ -107,6 +132,16 @@ for (let k = 0; k < 4; k++)
       h = cfg.buildings.defaultHeightByType[type] ?? cfg.buildings.defaultHeight;
       src = 2;
     }
+    const style = {
+      colour: parseColour(t['building:colour']),
+      roofColour: parseColour(t['roof:colour']),
+      roofShape: t['roof:shape'] ? (ROOF[t['roof:shape']] ?? 5) : 0,
+      use: useOf(t, type),
+      levels: Math.min(
+        255,
+        Math.max(1, Math.round(parseFloat(t['building:levels'] ?? '') || h / cfg.buildings.metersPerLevel)),
+      ),
+    };
     for (const poly of polygonsOf(el)) {
       const outer = clipSimplify(poly.outer, cfg.buildings.simplifyMeters);
       if (outer.length < 3) {
@@ -120,9 +155,18 @@ for (let k = 0; k < 4; k++)
       const holes = poly.holes
         .map((r) => clipSimplify(r, cfg.buildings.simplifyMeters))
         .filter((r) => r.length >= 3);
-      buildings.push({ rings: [outer, ...holes], h, src, type });
+      buildings.push({ rings: [outer, ...holes], h, src, type, ...style });
     }
   }
+
+// สีที่ติดแท็กมีน้อย → เก็บเป็น index (Uint8) ของ palette ใน buildings.json (0 = ไม่มี)
+const palette: number[] = [];
+function paletteIndex(rgb1: number): number {
+  if (!rgb1) return 0;
+  let k = palette.indexOf(rgb1 - 1);
+  if (k < 0 && palette.length < 255) k = palette.push(rgb1 - 1) - 1;
+  return k < 0 ? 0 : k + 1;
+}
 
 // เขียนไบนารี: อาร์เรย์ Uint32 ก่อน แล้ว Uint16 แล้ว Uint8 (จัด alignment)
 const Q = 0.25; // เมตรต่อหน่วย
@@ -143,7 +187,12 @@ const ringStart = new Uint32Array(nB),
   verts = new Uint16Array(nV * 2),
   src = new Uint8Array(nB),
   type = new Uint8Array(nB),
-  ringCount = new Uint8Array(nB);
+  ringCount = new Uint8Array(nB),
+  roofShape = new Uint8Array(nB),
+  colour = new Uint8Array(nB),
+  roofColour = new Uint8Array(nB),
+  use = new Uint8Array(nB),
+  levels = new Uint8Array(nB);
 {
   let r = 0,
     v = 0;
@@ -153,6 +202,11 @@ const ringStart = new Uint32Array(nB),
     heightDm[i] = Math.round(b.h * 10);
     src[i] = b.src;
     type[i] = typeIdx.get(b.type) ?? 255;
+    colour[i] = paletteIndex(b.colour);
+    roofColour[i] = paletteIndex(b.roofColour);
+    roofShape[i] = b.roofShape;
+    use[i] = b.use;
+    levels[i] = b.levels;
     for (const ring of b.rings.slice(0, 255)) {
       ringVertStart[r] = v;
       ringVertCount[r] = ring.length;
@@ -165,7 +219,21 @@ const ringStart = new Uint32Array(nB),
     }
   });
 }
-const parts = { ringStart, ringVertStart, heightDm, ringVertCount, verts, src, type, ringCount };
+const parts = {
+  ringStart,
+  ringVertStart,
+  heightDm,
+  ringVertCount,
+  verts,
+  src,
+  type,
+  ringCount,
+  roofShape,
+  colour,
+  roofColour,
+  use,
+  levels,
+};
 const offsets: Record<string, [number, number]> = {};
 let off = 0;
 const chunks: Buffer[] = [];
@@ -199,6 +267,29 @@ writeFileSync(
       heightUnit: 'dm',
       heightSources: SRC_NAMES,
       heightSourceCount: srcCount,
+      style: {
+        colour: 'Uint8 index+1 ของ palette จาก building:colour (0 = ไม่มี)',
+        roofColour: 'Uint8 index+1 ของ palette จาก roof:colour (0 = ไม่มี)',
+        palette: palette.map((c) => '#' + c.toString(16).padStart(6, '0')),
+        roofShape: ['ไม่ระบุ', 'แบน', 'จั่ว', 'ปั้นหยา', 'พีระมิด', 'อื่น ๆ'],
+        use: [
+          'ไม่ระบุ',
+          'บ้าน',
+          'ที่อยู่อาศัยรวม',
+          'พาณิชย์/สำนักงาน',
+          'ศาสนสถาน',
+          'สาธารณะ',
+          'อุตสาหกรรม/โกดัง',
+          'หลังคา/เพิง',
+        ],
+        levels: 'จำนวนชั้น (จากแท็ก หรือ ความสูง/3.2)',
+        counts: {
+          colour: buildings.filter((b) => b.colour).length,
+          roofColour: buildings.filter((b) => b.roofColour).length,
+          roofShape: buildings.filter((b) => b.roofShape).length,
+          use: [0, 1, 2, 3, 4, 5, 6, 7].map((u) => buildings.filter((b) => b.use === u).length),
+        },
+      },
       typeNames,
       attribution: '© OpenStreetMap contributors (ODbL)',
       generated: new Date().toISOString().slice(0, 10),
@@ -213,7 +304,6 @@ console.log(
 );
 
 // ---------------- แม่น้ำและคลอง ----------------
-const ll = (r: Ring) => r.map(([x, y]) => P.toLatLon(x, y).map((v) => +v.toFixed(6)));
 const water = (els: OsmEl[], tol: number) =>
   els
     .filter(

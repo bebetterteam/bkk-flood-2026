@@ -88,3 +88,51 @@ describe('แม่น้ำและคลอง', () => {
       }
   });
 });
+
+describe('ข้อมูลโหมดสมจริง (MVP 3)', () => {
+  const rj = JSON.parse(readFileSync(OUT + 'roads.json', 'utf8'));
+  const rb = readFileSync(OUT + 'roads.bin');
+  const rv = <T>(C: new (b: ArrayBuffer, o: number, n: number) => T, k: string): T =>
+    new C(rb.buffer as ArrayBuffer, rb.byteOffset + rj.offsets[k][0], rj.offsets[k][1]);
+  it('ถนน: ความกว้าง > 0, จุดอยู่ใน bbox, index ไม่เกิน, ความสูงยกสมเหตุสมผล', () => {
+    const ls = rv(Uint32Array, 'lineStart'),
+      lc = rv(Uint16Array, 'lineCount'),
+      wd = rv(Uint16Array, 'widthDm'),
+      v = rv(Uint16Array, 'verts'),
+      lift = rv(Uint16Array, 'liftDm'),
+      cls = rv(Uint8Array, 'cls');
+    const [W, H] = rj.extentMeters;
+    let bad = 0;
+    for (let i = 0; i < rj.count; i++) {
+      if (!(wd[i] > 0) || lc[i] < 2 || ls[i] + lc[i] > rj.vertices || cls[i] >= rj.classes.length) bad++;
+    }
+    for (let k = 0; k < rj.vertices; k++) {
+      if (v[k * 2] * rj.quantMeters > W + 0.25 || v[k * 2 + 1] * rj.quantMeters > H + 0.25) bad++;
+      if (lift[k] > 400) bad++; // ≤ 40 ม.
+    }
+    expect(bad).toBe(0);
+    expect(lift.some((x) => x >= 140)).toBe(true); // มีทางยกระดับ
+  });
+  it('พื้นที่สีเขียวอยู่ใน bbox และมีประเภทที่รู้จัก', () => {
+    const g = JSON.parse(readFileSync(OUT + 'green.json', 'utf8')).polygons;
+    expect(g.length).toBeGreaterThan(0);
+    for (const p of g) {
+      expect(['grass', 'wood', 'temple', 'pitch', 'cemetery']).toContain(p.kind);
+      for (const pt of p.outer) expect(inBbox(pt)).toBe(true);
+    }
+  });
+  it('ต้นไม้: จำนวนตรงกับไฟล์', () => {
+    const tj = JSON.parse(readFileSync(OUT + 'trees.json', 'utf8'));
+    expect(readFileSync(OUT + 'trees.bin').length).toBe(tj.count * 4);
+  });
+  it('ตึก: อาร์เรย์สไตล์ครบและค่าอยู่ในช่วง', () => {
+    const bm = JSON.parse(readFileSync(OUT + 'buildings.json', 'utf8'));
+    for (const k of ['use', 'roofShape', 'colour', 'roofColour', 'levels'])
+      expect(bm.offsets[k][1]).toBe(bm.count);
+    const bin = readFileSync(OUT + 'buildings.bin');
+    const use = new Uint8Array(bin.buffer, bin.byteOffset + bm.offsets.use[0], bm.count);
+    const col = new Uint8Array(bin.buffer, bin.byteOffset + bm.offsets.colour[0], bm.count);
+    expect(use.every((u) => u < bm.style.use.length)).toBe(true);
+    expect(col.every((c) => c <= bm.style.palette.length)).toBe(true);
+  });
+});

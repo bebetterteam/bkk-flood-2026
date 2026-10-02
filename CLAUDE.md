@@ -51,6 +51,10 @@ scripts/               pipeline (Node 22 รัน .ts ตรง ๆ, typecheck 
   build-dem.ts         crop + bilinear → dem.f32 + meta.json
   build-osm.ts         ตึก → buildings.bin/.json, river.json, canals.json
   report.ts            รายงาน + preview; calibration จาก data/calibration.json
+  build-osm-real.ts    MVP 3: ถนน/ราง (roads.bin), พื้นที่สีเขียว (green.json), ต้นไม้ (trees.bin)
+  fetch-textures.ts    MVP 3: texture CC0 จาก Poly Haven → public/textures/ (ย่อด้วย sips)
+  report-real.ts       MVP 3: reports/mvp3-phase-a.md + mvp3-preview.png
+  lib/osm.ts           อ่าน/แปลง element OSM (polygonsOf, clipSimplify) ใช้ร่วมกัน
   data.test.ts         ตรวจไฟล์ใน public/data/study-area/
 data/calibration.json  จุดอ้างอิง (ว่างไว้ให้ผู้ใช้กรอก ห้ามแต่งค่า)
 public/data/study-area/ ข้อมูลที่ประมวลผลแล้ว (~3.7 MB)
@@ -81,6 +85,11 @@ tests/                 เทสต์ที่ใช้ข้อมูลจร
 - **dem.f32:** Float32 LE, row-major แถวแรก = ขอบเหนือ ค่าที่กึ่งกลางช่อง หน่วยเมตร **อ้างอิง geoid EGM2008**
 - **buildings.bin:** อาร์เรย์ต่อกัน ตำแหน่ง/ความยาวใน `buildings.json.offsets`; พิกัด Uint16 หน่วย 0.25 ม. จากมุม SW ของ bbox;
   ring แรกของแต่ละตึก = outer ที่เหลือ = hole; `heightDm` (เดซิเมตร); `src` 0=`height`, 1=`building:levels`×3.2 ม., 2=ค่าเริ่มต้นตามประเภท
+- **buildings.bin (MVP 3 เพิ่ม):** `use` (ประเภทการใช้งาน), `roofShape`, `colour`/`roofColour` (index ของ palette ใน json), `levels`
+- **roads.bin:** `lineStart/lineCount/verts` (Uint16 0.25 ม.), `widthDm`, `liftDm` (ความสูงยกต่อจุด — ค่าประมาณ ดู `roads.json.liftRule`),
+  `cls` (index ของ `roads.json.classes`), `lanes`, `flags` (1 oneway, 2 bridge, 4 rail); ตัดทางเดิน/บันได/อุโมงค์ใต้ดินออก
+- **green.json / trees.bin:** สวน หญ้า ป่า ลานวัด สนาม (polygon lat/lon) และต้นไม้ (Uint16 คู่)
+- **public/textures/:** CC0 (Poly Haven) + waternormals (MIT) รายละเอียดใน `public/textures/LICENSE.md`
 - **river.json / canals.json:** polygon lat/lon 6 หลัก (clip ตาม bbox, simplify 1 ม.) + เส้นคลอง
   หมายเหตุ: OSM แท็ก `คลองบางกอกใหญ่` เป็น `water=river` ด้วย — ตอนสร้างกริดต้องแยกแม่น้ำเจ้าพระยาออกจากคลอง
 

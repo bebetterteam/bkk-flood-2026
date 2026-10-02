@@ -9,9 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint . && prettier --check .",
-    "data:fetch": "node scripts/fetch-dem.ts && node scripts/fetch-dem.ts --source=copernicus && node scripts/fetch-osm.ts",
-    "data:build": "node scripts/build-dem.ts && node scripts/build-osm.ts",
-    "data:report": "node scripts/report.ts",
+    "data:fetch": "node scripts/fetch-dem.ts && node scripts/fetch-dem.ts --source=copernicus && node scripts/fetch-osm.ts && node scripts/fetch-textures.ts",
+    "data:build": "node scripts/build-dem.ts && node scripts/build-osm.ts && node scripts/build-osm-real.ts",
+    "data:report": "node scripts/report.ts && node scripts/report-real.ts",
     "data": "npm run data:fetch && npm run data:build && npm run data:report"
   },
   "dependencies": {
