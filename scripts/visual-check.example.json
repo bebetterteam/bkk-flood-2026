@@ -1,0 +1,22 @@
+[
+  { "eval": "__mode('study').then(()=>__quality('real')).then(()=>'ok')", "wait": 2500 },
+  { "eval": "__cam(13.7505, 100.4925, 40, 30), 1", "wait": 2500, "shot": "70-palace" },
+  { "eval": "__cam(13.7245, 100.531, 30, 26), 1", "wait": 2500, "shot": "71-silom" },
+  {
+    "eval": "document.querySelector('[data-cam=klongtoei]').click(), 1",
+    "wait": 3000,
+    "shot": "72-klongtoei"
+  },
+  { "eval": "document.querySelectorAll('#presets button')[5].click(), 1", "wait": 7000 },
+  {
+    "eval": "document.querySelector('[data-cam=rattana]').click(), 1",
+    "wait": 3000,
+    "shot": "73-future-rattana"
+  },
+  {
+    "eval": "__quality('simple').then(()=>__mode('overview')).then(()=>'back')",
+    "wait": 3000,
+    "shot": "74-back-overview"
+  },
+  { "eval": "JSON.stringify(window.__SIM() && {area: window.__SIM().area})" }
+]

@@ -186,6 +186,7 @@ async function setMode(m: AppMode): Promise<void> {
     $('study-note').style.display = isStudy ? '' : 'none';
     $('attrib').style.display = isStudy ? '' : 'none';
     camera.far = isStudy ? 6000 : 500;
+    camera.near = isStudy ? 1 : 0.1; // ความแม่นยำของ depth (ถนนบนพื้น/ผิวน้ำ)
     camera.updateProjectionMatrix();
     controls.minDistance = isStudy ? 2 : 4;
     controls.maxDistance = isStudy ? 2500 : 130;
@@ -323,6 +324,9 @@ declare global {
     __SIM?: () => SimSummary | null;
     __run?: (reset: boolean) => Promise<void>;
     __mode?: (m: AppMode) => Promise<void>;
+    /** โหมดพื้นที่ศึกษา: วางกล้องที่ lat/lon ระยะ dist และสูง h (หน่วยโลก = 10 ม.) */
+    __cam?: (lat: number, lon: number, dist: number, h: number) => void;
+    __quality?: (q: Quality) => Promise<void>;
   }
 }
 window.__ready = true;
@@ -335,4 +339,12 @@ window.__SIM = () => {
 };
 window.__run = run;
 window.__mode = setMode;
+window.__quality = setQuality;
+// dev เท่านั้น: เข้าถึง three.js สำหรับดีบัก (ไม่อยู่ใน build จริง)
+if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__three = { renderer, scene, camera };
+window.__cam = (lat, lon, dist, h) => {
+  if (!study) return;
+  const f = study.frame;
+  camTween.goToPose([f.wx(lon) - dist * 0.35, h, f.wz(lat) + dist], [f.wx(lon), 0, f.wz(lat)], true);
+};
 tick();

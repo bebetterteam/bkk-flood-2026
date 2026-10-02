@@ -89,6 +89,7 @@ export function groundMaterial(tx: Textures, mask: THREE.DataTexture): THREE.Mes
     normalMap: tx.pavementN,
     normalScale: new THREE.Vector2(0.6, 0.6),
     roughness: 0.92,
+    envMapIntensity: 0.4,
   });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uMask = { value: mask };
@@ -109,9 +110,9 @@ export function groundMaterial(tx: Textures, mask: THREE.DataTexture): THREE.Mes
         vec3 pave = texture2D(map, vMapUv).rgb;
         vec3 grassC = texture2D(uGrass, vMapUv * 0.5).rgb;
         gMask = texture2D(uMask, vMaskUv);
-        vec3 col = pave * vec3(0.92, 0.9, 0.86);
-        col = mix(col, grassC, gMask.r);
-        col = mix(col, grassC * vec3(0.55, 0.75, 0.5), gMask.g);
+        vec3 col = pave * vec3(0.86, 0.87, 0.89);
+        col = mix(col, grassC * vec3(0.72, 1.0, 0.5), gMask.r);
+        col = mix(col, grassC * vec3(0.42, 0.66, 0.36), gMask.g);
         col = mix(col, pave * vec3(1.12, 1.06, 0.95), gMask.a * 0.85);
         col = mix(col, vec3(0.11, 0.16, 0.15), gMask.b);
         col *= mix(1.0, 0.62, uWet * (1.0 - gMask.b));
@@ -138,7 +139,6 @@ export function wallMaterial(tx: Textures): THREE.MeshStandardMaterial {
     vertexColors: true,
     roughness: 0.85,
     flatShading: true,
-    side: THREE.DoubleSide,
   });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uWet = shared.uWet;
@@ -187,13 +187,13 @@ export function wallMaterial(tx: Textures): THREE.MeshStandardMaterial {
 }
 
 export function roofFlatMaterial(tx: Textures): THREE.MeshStandardMaterial {
+  // ใช้ texture ปูน (เนียนกว่าทางเท้า ไม่เห็นลายแผ่นปู) คูณสีหลังคา
   return new THREE.MeshStandardMaterial({
-    map: tx.pavement,
-    normalMap: tx.pavementN,
+    map: tx.plaster,
     vertexColors: true,
-    roughness: 0.95,
+    roughness: 0.9,
+    envMapIntensity: 0.4,
     flatShading: true,
-    side: THREE.DoubleSide,
   });
 }
 
@@ -206,7 +206,7 @@ export function roofTileMaterial(tx: Textures): THREE.MeshStandardMaterial {
     vertexColors: true,
     roughness: 0.7,
     flatShading: true,
-    side: THREE.DoubleSide,
+    envMapIntensity: 0.4,
   });
 }
 
@@ -216,9 +216,11 @@ export function roadMaterial(tx: Textures): THREE.MeshStandardMaterial {
     normalMap: tx.asphaltN,
     normalScale: new THREE.Vector2(0.7, 0.7),
     roughness: 0.9,
+    envMapIntensity: 0.4,
+    // ดึงถนนขึ้นเล็กน้อยกันการกระพริบกับพื้น แต่ไม่มากจนถนนทะลุผิวน้ำท่วม
     polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -4,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
   });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uWet = shared.uWet;
@@ -284,11 +286,11 @@ export function waterMaterial(tx: Textures): THREE.MeshStandardMaterial {
   tx.water.repeat.set(1, 1);
   const m = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    color: 0xc9b99a, // โทนน้ำขุ่น
     transparent: true,
-    opacity: 0.9,
-    roughness: 0.06,
-    metalness: 0.1,
+    opacity: 0.94,
+    roughness: 0.07,
+    metalness: 0,
+    envMapIntensity: 1.0,
     normalMap: tx.water,
     normalScale: new THREE.Vector2(0.35, 0.35),
     depthWrite: false,
@@ -297,6 +299,13 @@ export function waterMaterial(tx: Textures): THREE.MeshStandardMaterial {
     sh.uniforms.uTime = shared.uTime;
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uTime;')
+      .replace(
+        '#include <color_fragment>',
+        /* glsl */ `#include <color_fragment>
+        // แปลงสีตามความลึก (ฟ้าอ่อน = ตื้น … น้ำเงินเข้ม = ลึก) เป็นโทนน้ำขุ่นสีน้ำตาลแบบน้ำท่วมจริง
+        float wl = dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11));
+        diffuseColor.rgb = mix(vec3(0.2, 0.17, 0.1), vec3(0.62, 0.52, 0.33), smoothstep(0.05, 0.75, wl));`,
+      )
       .replace(
         '#include <normal_fragment_maps>',
         /* glsl */ `

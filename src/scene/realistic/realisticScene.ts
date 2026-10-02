@@ -193,7 +193,7 @@ export async function createRealisticScene(opts: {
       m.compose(new THREE.Vector3(x, y + h * 0.62, z), q, new THREE.Vector3(r, r * 0.8, r));
       crown.setMatrixAt(k, m);
       q.identity();
-      crown.setColorAt(k, c.setHSL(0.24 + hue * 0.08, 0.45, 0.22 + s * 0.1));
+      crown.setColorAt(k, c.setHSL(0.25 + hue * 0.07, 0.55, 0.12 + s * 0.07));
     }
   }
   crown.castShadow = true;

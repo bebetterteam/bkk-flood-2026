@@ -40,7 +40,8 @@ const WALL: number[][] = [
 const ROOF_TILE = [0xffffff, 0xffe2cc, 0xe6d6cc, 0xa9a9b4, 0xbcb4ac];
 /** หลังคาวัด: ส้ม-แดงสด และกระเบื้องเคลือบสีน้ำเงิน-เขียว (คูณกับ texture ดินเผา) */
 const TEMPLE_ROOF = [0xffc890, 0xffb07a, 0xffd28c, 0x6fa2ff, 0x7fd0a0];
-const ROOF_FLAT = [0xb4b1aa, 0xa9a59c, 0xc2beb6, 0x9c9a94];
+/** หลังคาแบน: คอนกรีตสีอ่อน + หลังคาเหล็กแผ่นเทา/ฟ้า (คูณกับ texture ปูน) */
+const ROOF_FLAT = [0xdedbd4, 0xd2cec6, 0xe8e5de, 0xc6c2ba, 0xb9c3cc, 0xa7b7c7, 0xcfc6b6];
 
 const hash = (i: number) => {
   let x = (i + 1) * 0x9e3779b1;
@@ -56,6 +57,23 @@ const lin = (hex: number) =>
     const v = c / 255;
     return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
   });
+
+/** เพิ่มสามเหลี่ยมหลังคาโดยให้ด้านหน้าหันขึ้นฟ้า (สลับลำดับถ้าคว่ำ) */
+function pushUp(
+  T: { pos: number[]; idx: [number[], number[], number[]] },
+  g: 1 | 2,
+  a: number,
+  b: number,
+  c: number,
+) {
+  const p = T.pos;
+  const ux = p[b * 3] - p[a * 3],
+    uz = p[b * 3 + 2] - p[a * 3 + 2],
+    vx = p[c * 3] - p[a * 3],
+    vz = p[c * 3 + 2] - p[a * 3 + 2];
+  if (uz * vx - ux * vz < 0) T.idx[g].push(a, c, b);
+  else T.idx[g].push(a, b, c);
+}
 
 export function buildRealBuildingTiles(
   meta: BuildingsMeta & { style?: { palette?: string[] } },
@@ -107,6 +125,16 @@ export function buildRealBuildingTiles(
         ring.push([verts[(rvs[r] + k) * 2] * Q, verts[(rvs[r] + k) * 2 + 1] * Q]);
       rings.push(ring);
     }
+    // ทิศการวนให้สม่ำเสมอ: outer ทวนเข็ม (มองจากด้านบน), hole ตามเข็ม → ผนังหันออกนอกเสมอ ใช้ FrontSide ได้
+    // (FrontSide ทำให้ shadow pass วาดด้านหลังแทน จึงไม่เกิด shadow acne บนผนังที่โดนแดด)
+    const signed = (r: [number, number][]) => {
+      let a2 = 0;
+      for (let i = 0, j = r.length - 1; i < r.length; j = i++) a2 += r[j][0] * r[i][1] - r[i][0] * r[j][1];
+      return a2;
+    };
+    rings.forEach((r, k) => {
+      if ((k === 0) !== signed(r) > 0) r.reverse();
+    });
     const outer = rings[0];
     // พื้นที่และจุดศูนย์กลาง (shoelace)
     let A = 0,
@@ -197,7 +225,7 @@ export function buildRealBuildingTiles(
         T.col.push(...rc);
         T.fac.push(-1);
       }
-      for (let k = 0; k < outer.length; k++) T.idx[2].push(apex, eave + k, eave + ((k + 1) % outer.length));
+      for (let k = 0; k < outer.length; k++) pushUp(T, 2, apex, eave + k, eave + ((k + 1) % outer.length));
     } else {
       const rc = lin(
         roofColour[b] && palette[roofColour[b] - 1] !== undefined
@@ -216,7 +244,7 @@ export function buildRealBuildingTiles(
           T.col.push(...rc);
           T.fac.push(-1);
         }
-      for (const f of faces) T.idx[1].push(start + f[0], start + f[1], start + f[2]);
+      for (const f of faces) pushUp(T, 1, start + f[0], start + f[1], start + f[2]);
     }
   }
   return acc.map((T) => {
