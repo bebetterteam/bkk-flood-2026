@@ -85,5 +85,5 @@ export function createWater(scene: THREE.Object3D, grid: Grid, f: Frame = overvi
     geo.attributes.color.needsUpdate = true;
     return simT < Math.max(3.5, sim.maxArr * grid.arrivalScale + 1);
   }
-  return { cur, reset, update };
+  return { cur, reset, update, mesh };
 }

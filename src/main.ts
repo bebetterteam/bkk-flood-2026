@@ -19,6 +19,8 @@ import { createLabels } from './scene/labels';
 import { CAMS, createCameraTween, type CamView } from './scene/cameraViews';
 import { overviewFrame } from './scene/frame';
 import { createStudyScene, type StudyScene } from './scene/study/studyScene';
+import type { Quality, RealisticScene } from './scene/realistic/realisticScene';
+import type { StudyData } from './data/studyArea';
 import { $ } from './ui/dom';
 import { bindPanel, renderPanel } from './ui/panel';
 import { renderResults } from './ui/results';
@@ -58,7 +60,12 @@ const camTween = createCameraTween(camera, controls);
 
 // ---- ฉากพื้นที่ศึกษา (โหลดเมื่อกดครั้งแรก) ----
 let study: StudyScene | null = null;
+let studyData: StudyData | null = null;
 let studyLoading: Promise<StudyScene> | null = null;
+// ---- โหมดสมจริง (โหลดเมื่อเลือกครั้งแรก; โค้ดแยก chunk) ----
+let realistic: RealisticScene | null = null;
+let realLoading: Promise<RealisticScene> | null = null;
+let quality: Quality = 'simple';
 const EXAG = STUDY_CONFIG.view.terrainExaggeration;
 const calibrated = STUDY_CONFIG.verticalOffset.status === 'calibrated';
 
@@ -68,6 +75,7 @@ async function ensureStudy(): Promise<StudyScene> {
     const t0 = performance.now();
     topbar.setText(STUDY.loading);
     const data = await loadStudyData();
+    studyData = data;
     const g = await client.initStudy(data.inputs);
     topbar.setText(STUDY.building);
     await new Promise((r) => setTimeout(r, 0)); // ให้ข้อความแสดงก่อนงานหนัก
@@ -80,6 +88,66 @@ async function ensureStudy(): Promise<StudyScene> {
     return (study = s);
   })();
   return studyLoading;
+}
+
+async function ensureRealistic(): Promise<RealisticScene> {
+  if (realistic) return realistic;
+  realLoading ??= (async () => {
+    const t0 = performance.now();
+    topbar.setText(STUDY.loadingReal);
+    const [{ createRealisticScene }, { loadRealisticData }] = await Promise.all([
+      import('./scene/realistic/realisticScene'),
+      import('./data/realisticData'),
+    ]);
+    const data = await loadRealisticData();
+    topbar.setText(STUDY.buildingReal);
+    await new Promise((r) => setTimeout(r, 0));
+    const r = await createRealisticScene({
+      scene,
+      renderer,
+      stageLights: stage.lights,
+      study: study!,
+      studyData: studyData!,
+      data,
+    });
+    console.info(`[realistic] โหลดเสร็จใน ${(performance.now() - t0).toFixed(0)} ms`);
+    return (realistic = r);
+  })();
+  return realLoading;
+}
+
+/** เปลี่ยนคุณภาพภาพ (มีผลเฉพาะโหมดพื้นที่ศึกษา) */
+async function setQuality(q: Quality): Promise<void> {
+  topbar.setQualityBusy(true);
+  try {
+    if (q !== 'simple') await ensureRealistic();
+    quality = q;
+    topbar.setQuality(q);
+    applyQuality();
+    if (sim) topbar.setMoving(true);
+  } catch (e) {
+    console.error(e);
+    topbar.setText(STUDY.loadFailed((e as Error).message));
+  } finally {
+    topbar.setQualityBusy(false);
+  }
+}
+function applyQuality(): void {
+  const q = mode === 'study' ? quality : 'simple';
+  realistic?.setQuality(q);
+  realistic?.update();
+  const real = q !== 'simple';
+  if (study)
+    $('attrib').textContent =
+      STUDY.attribution(study.grid.meta.source.id) + (real ? STUDY.textureCredit : '');
+  const note = $('study-note');
+  if (study && studyData) {
+    const bm = studyData.buildings.meta;
+    const defaultPct = Math.round((bm.heightSourceCount[2] / bm.count) * 100);
+    note.innerHTML =
+      STUDY.note(STUDY_CONFIG.verticalOffset.value, calibrated, defaultPct, EXAG) +
+      (real ? STUDY.realNote : '');
+  }
 }
 
 function studyCam(view: string): [[number, number, number], [number, number, number]] {
@@ -110,6 +178,7 @@ async function setMode(m: AppMode): Promise<void> {
     mode = m;
     sim = null; // ผลของโหมดเดิมใช้กับกริดใหม่ไม่ได้ (ขนาดต่างกัน) — รอผลใหม่ก่อนวาดน้ำ
     const isStudy = m === 'study';
+    applyQuality();
     ov.visible = !isStudy;
     if (study) study.group.visible = isStudy;
     ovLabelBox.style.display = isStudy ? 'none' : '';
@@ -137,8 +206,10 @@ async function setMode(m: AppMode): Promise<void> {
 
 function updateTerrain(): void {
   if (!sim) return;
-  if (mode === 'study') study!.updateTerrain(sim.hEff, viewMode, P);
-  else {
+  if (mode === 'study') {
+    study!.updateTerrain(sim.hEff, viewMode, P);
+    realistic?.update();
+  } else {
     terrain.update(sim.hEff, viewMode);
     walls.update(sim.hEff, P);
     canals.update(sim.hEff);
@@ -160,6 +231,7 @@ const topbar = createTopbar($('topbar'), $('clock'), {
   onCam: (v) => (mode === 'study' ? camTween.goToPose(...studyCam(v)) : camTween.goTo(v as CamView)),
   onReplay: () => activeWater().reset(),
   onMode: (m) => void setMode(m),
+  onQuality: (q) => void setQuality(q as Quality),
 });
 const tooltip = createTooltip($('tip'), renderer.domElement, camera);
 const activeWater = () => (mode === 'study' ? study!.water : water);
@@ -224,6 +296,7 @@ function tick(): void {
     topbar.setMoving(activeWater().update(dt, sim));
     if (mode === 'study') {
       study!.tick(dt, P);
+      realistic?.tick(dt, P, camera, controls.target);
       study!.labels.update(camera, showLabels, sim.hEff, study!.water.cur, P);
     } else {
       rain.tick(dt, P);

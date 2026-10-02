@@ -56,6 +56,14 @@ export interface StudyScene {
   buildingTypeName(i: number): string;
   /** ขนาดพื้นที่ (หน่วยโลก) */
   size: [number, number];
+  /** ส่วนที่โหมดสมจริงใช้ร่วม/ซ่อน */
+  internals: {
+    terrainGeometry: THREE.BufferGeometry;
+    /** วัตถุแบบเรียบง่ายที่ต้องซ่อนเมื่อเปิดโหมดสมจริง */
+    simpleObjects: THREE.Object3D[];
+    /** y ที่ตึกเลื่อนลงตามการทรุดตัว (หน่วยโลก) */
+    subsidenceY(): number;
+  };
 }
 
 export function createStudyScene(
@@ -75,7 +83,11 @@ export function createStudyScene(
 
   // พื้น
   const geo = gridGeometry(f);
-  group.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 })));
+  const terrainMesh = new THREE.Mesh(
+    geo,
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }),
+  );
+  group.add(terrainMesh);
   const water = createWater(group, grid, f);
   // ฐานใต้แผนที่
   const base = new THREE.Mesh(
@@ -202,5 +214,10 @@ export function createStudyScene(
     pickBuilding,
     buildingTypeName: (i) => bm.typeNames[i] ?? 'other',
     size: [W, D],
+    internals: {
+      terrainGeometry: geo,
+      simpleObjects: [terrainMesh, bGroup, rain.points, flow.points],
+      subsidenceY: () => bGroup.position.y,
+    },
   };
 }

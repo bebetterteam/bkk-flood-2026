@@ -10,6 +10,8 @@ export interface Stage {
   controls: OrbitControls;
   /** ระยะหมอก (เปลี่ยนตามโหมด) */
   setFog(near: number, far: number): void;
+  /** แสงพื้นฐานของฉาก (โหมดสมจริงปิดแล้วใช้แสงของตัวเอง) */
+  lights: THREE.Light[];
 }
 
 export const isDark = (): boolean =>
@@ -43,7 +45,8 @@ export function createStage(container: HTMLElement): Stage {
   controls.minDistance = 4;
   controls.maxDistance = 130;
 
-  scene.add(new THREE.HemisphereLight(0xeef6ff, 0x8a7d63, 1.1));
+  const hemi = new THREE.HemisphereLight(0xeef6ff, 0x8a7d63, 1.1);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffffff, 1.5);
   sun.position.set(-30, 60, 25);
   scene.add(sun);
@@ -59,7 +62,7 @@ export function createStage(container: HTMLElement): Stage {
     fogFar = far;
     applyBg();
   };
-  return { renderer, scene, camera, controls, setFog };
+  return { renderer, scene, camera, controls, setFog, lights: [hemi, sun] };
 }
 
 /** ฐานดินใต้แผนที่ */

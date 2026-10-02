@@ -21,12 +21,11 @@ export function createRain(
     rp[k * 3 + 2] = (rnd() - 0.5) * box.d;
   }
   geo.setAttribute('position', new THREE.BufferAttribute(rp, 3));
-  scene.add(
-    new THREE.Points(
-      geo,
-      new THREE.PointsMaterial({ color: 0x7fb2e5, size: box.size, transparent: true, opacity: 0.75 }),
-    ),
+  const points = new THREE.Points(
+    geo,
+    new THREE.PointsMaterial({ color: 0x7fb2e5, size: box.size, transparent: true, opacity: 0.75 }),
   );
+  scene.add(points);
 
   function tick(dt: number, P: SimParams): void {
     const rc = Math.floor((P.rain / 150) * RMAX);
@@ -40,7 +39,7 @@ export function createRain(
       geo.attributes.position.needsUpdate = true;
     }
   }
-  return { tick };
+  return { tick, points };
 }
 
 const FMAX = 700;
@@ -100,5 +99,5 @@ export function createRiverFlow(
     }
     geo.attributes.position.needsUpdate = true;
   }
-  return { tick };
+  return { tick, points: pts };
 }

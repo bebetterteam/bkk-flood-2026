@@ -8,6 +8,7 @@ export interface TopbarCallbacks {
   onLabels: (show: boolean) => void;
   onCam: (v: string) => void;
   onMode: (m: AppMode) => void;
+  onQuality: (q: string) => void;
 }
 
 /** ปุ่มด้านบนขวา (โหมดแสดงผล ป้ายชื่อ มุมกล้อง) + นาฬิกาจำลองด้านล่าง */
@@ -29,6 +30,23 @@ export function createTopbar(
       (b.onclick = () => {
         if (b.classList.contains('on') || b.disabled) return;
         cb.onMode(b.dataset.mode as AppMode);
+      }),
+  );
+  const qBox = document.createElement('span');
+  qBox.className = 'seg';
+  qBox.id = 'quality';
+  qBox.title = STUDY.qualityTitle;
+  qBox.style.display = 'none';
+  qBox.innerHTML = STUDY.quality
+    .map(([k, n], i) => `<button data-q="${k}"${i ? '' : ' class="on"'}>${n}</button>`)
+    .join('');
+  bar.querySelector('.seg')!.after(qBox);
+  const qBtns = qBox.querySelectorAll<HTMLButtonElement>('[data-q]');
+  qBtns.forEach(
+    (b) =>
+      (b.onclick = () => {
+        if (b.classList.contains('on') || b.disabled) return;
+        cb.onQuality(b.dataset.q!);
       }),
   );
   const camsBox = bar.querySelector<HTMLElement>('#cams')!;
@@ -65,7 +83,14 @@ export function createTopbar(
     setText(t: string) {
       ct.textContent = t;
     },
+    setQuality(q: string) {
+      qBtns.forEach((x) => x.classList.toggle('on', x.dataset.q === q));
+    },
+    setQualityBusy(busy: boolean) {
+      qBtns.forEach((x) => (x.disabled = busy));
+    },
     setMode(m: AppMode) {
+      qBox.style.display = m === 'study' ? '' : 'none';
       modes.forEach((x) => x.classList.toggle('on', x.dataset.mode === m));
       setCams(m === 'overview' ? TOPBAR.cams : STUDY.cams);
     },

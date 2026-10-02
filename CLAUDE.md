@@ -43,6 +43,10 @@ src/
   scene/               three.js: stage (renderer/camera/lights/fog), terrain, water, walls, buildings, canals, infra, particles (ฝน/การไหล), labels, cameraViews
     frame.ts           Frame = ขนาดกริด + การฉายพิกัด + VEX ของแต่ละโหมด (water/walls/labels/tooltip ใช้ร่วมกัน)
     study/             studyScene.ts (ฉากพื้นที่ศึกษา), buildingGeometry.ts (extrude + รวมตึกเป็น tile 4×4)
+    realistic/         MVP 3 โหมดสมจริง (โหลดแยก chunk เมื่อเลือกครั้งแรก):
+                       realisticScene.ts ประกอบ, materials.ts (shader patch: พื้นตาม mask, หน้าต่าง, เส้นจราจร, น้ำ),
+                       lighting.ts (Sky + เงาตามกล้อง + env map), weather.ts (ฝนเป็นเส้น + พื้นเปียก),
+                       roadGeometry.ts / buildingGeometryReal.ts / landscape.ts = builder แบบ pure (เทสต์ใน Node)
   ui/                  strings.ts (ข้อความไทยทั้งหมด), panel, results (เกจ/สถิติ/คำอธิบาย), legend, tooltip, topbar
 config/study-area.json bbox, ขนาดช่อง, แหล่ง DEM, verticalOffset, ความสูงเขื่อน, ค่าความสูงตึกเริ่มต้น
 scripts/               pipeline (Node 22 รัน .ts ตรง ๆ, typecheck ด้วย scripts/tsconfig.json)
@@ -78,6 +82,18 @@ tests/                 เทสต์ที่ใช้ข้อมูลจร
 - คลองเป็นพื้นดินตาม DEM สำหรับ sim (ไม่ใช่แหล่งน้ำ ไม่กั้นการไหล) มี mask `canal` ไว้วาด/tooltip
 - ตึกทรุดตามพื้นด้วยการเลื่อนทั้งกลุ่ม (subW ในพื้นที่ศึกษาคงที่ 0.5)
 - เวลาที่วัดใน Node: สร้างกริด ~130 ms, sim ต่อครั้ง 3–15 ms, สร้าง geometry ตึก ~120 ms (1.1 ล้านสามเหลี่ยม)
+
+## โหมดสมจริง (MVP 3)
+
+- ปุ่ม "เรียบง่าย / สมจริง / สมจริง+" แสดงเฉพาะโหมดพื้นที่ศึกษา; ไม่แตะการจำลอง ใช้ผลและ mesh น้ำเดียวกัน (เปลี่ยนเฉพาะ material)
+- ใช้เฉพาะ three.js + addons (`Sky`) — ไม่มี dependency ใหม่; SAO/post-processing ยังไม่ใส่ (ต้องปรับค่าโดยดูภาพจริง)
+- tone mapping ACES + เงา (`renderer.shadowMap`) เปิดเฉพาะตอนใช้โหมดนี้ และคืนค่าเดิมเมื่อสลับกลับ (โหมดภาพรวมไม่เปลี่ยน)
+- ตึกสมจริง: หน้าต่างจาก UV (ม.) ตามชนิด `facade`, หลังคาทรงพีระมิดสำหรับวัด/บ้านเล็ก/ที่ OSM ระบุทรง, สีจาก palette ตามการใช้งาน
+  (การชี้เมาส์ยัง raycast กับ mesh ตึกแบบเรียบง่ายที่ซ่อนอยู่ — รูปร่างเท่ากัน ยกเว้นหลังคาทรงพีระมิด)
+- ถนน: แบ่งจุดทุก 15 ม. ให้เกาะ DEM, ทางยกระดับเฉลี่ยพื้น ±60 ม. มีผนังข้างและเสาทุก ~30 ม.; `roadInfo.w = เลน×16 + bit เส้นจราจร`
+- ต้นไม้ ≤ 40,000 ต้น (OSM 13k + สุ่มในสวน/ป่าแบบ seed คงที่); พุ่มไม้ทอดเงาเฉพาะ "สมจริง+"
+- เวลาที่วัดใน Node: ถนน ~170 ms (518k สามเหลี่ยม, เสา 4,298), ตึก ~500 ms (1.13 ล้าน), mask+ต้นไม้ ~90 ms
+- เทสต์ `tests/materials.test.ts` ตรวจว่าการแทนที่ chunk ใน shader ของ three.js 0.160 ได้ผลจริง (ถ้าอัปเกรด three ต้องผ่านเทสต์นี้)
 
 ## ข้อมูลพื้นที่ศึกษา (MVP 2)
 
