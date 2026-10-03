@@ -364,9 +364,17 @@ const marker = createMarker(scene, $('labels'));
 let place: PickedLocation | null = null;
 let prompted = false;
 const locMsg = $('locmsg');
+const locMsgText = document.createElement('span');
+const locMsgClose = document.createElement('button');
+locMsgClose.type = 'button';
+locMsgClose.className = 'x';
+locMsgClose.textContent = '×';
+locMsgClose.setAttribute('aria-label', PLACE.close);
+locMsgClose.addEventListener('click', () => showMsg(null));
+locMsg.append(locMsgText, locMsgClose);
 const showMsg = (m: string | null) => {
   locMsg.hidden = !m;
-  locMsg.textContent = m ?? '';
+  locMsgText.textContent = m ?? '';
 };
 const activeFrame = () => (mode === 'study' ? study!.frame : overviewFrame);
 const activeGrid = () => (mode === 'study' ? study!.grid : grid);
@@ -398,6 +406,7 @@ const card = createPlaceCard($('place'), {
     if (place) flyTo(place.lat, place.lon);
   },
   onClear: () => {
+    showMsg(null);
     place = null;
     marker.set(null);
     card.setLocation(null);

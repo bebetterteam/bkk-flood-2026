@@ -518,6 +518,15 @@ details p {
   font-size: 12.5px;
   line-height: 1.5;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+#locmsg[hidden] {
+  display: none;
+}
+#locmsg > span {
+  flex: 1;
 }
 #place {
   position: fixed;
@@ -544,7 +553,8 @@ details p {
 #place .head b {
   font-size: 16px;
 }
-#place .x {
+#place .x,
+#locmsg .x {
   font: inherit;
   font-size: 18px;
   line-height: 1;
@@ -556,7 +566,9 @@ details p {
   border-radius: 6px;
 }
 #place .x:hover,
-#place .x:focus-visible {
+#place .x:focus-visible,
+#locmsg .x:hover,
+#locmsg .x:focus-visible {
   color: var(--ink);
   background: var(--line);
 }
