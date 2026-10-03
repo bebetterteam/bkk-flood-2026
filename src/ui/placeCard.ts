@@ -52,6 +52,7 @@ function forecastHtml(fc: ForecastState): string {
         pct(d.heavyChance),
         p,
         d.totalMed,
+        d.det?.total ?? null,
       );
       return `<li title="${title}"><span>${dateText(d.date, { weekday: 'short' })}</span><span class="cb"><i style="height:${rp}%"></i></span><b>${rp}%</b><small class="lvl-${level(d.chance)}">${PLACE.fcFloodShort(p)}</small></li>`;
     })
@@ -64,6 +65,7 @@ function forecastHtml(fc: ForecastState): string {
         <div class="tl">${PLACE.fcTomorrow(dateText(tm.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</div>
       </div>
       <div class="rn">${PLACE.fcRain(pct(tm.rainChance), pct(tm.heavyChance), tm.totalMed, tm.totalMax)}</div>
+      ${tm.det ? `<div class="in">${PLACE.fcDet(tm.det.total, tm.det.rate, tm.det.depth > FLOOD_DEPTH ? PLACE.fcDetFlood(PLACE.cm(tm.det.depth)) : PLACE.fcDetDry)}</div>` : ''}
       ${depth}
       <div class="in">${PLACE.fcInputs(tm.rainMax, tm.tide, tm.flow)}</div>
       <div class="need">${need}</div>

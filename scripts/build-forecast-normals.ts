@@ -42,16 +42,23 @@ const qNormal = byDoy.map((a) => Math.round(median(a)));
 const peakNormal = qNormal[doy(peak.date)];
 const k = (FLOW_2011 - BASE) / (peak.q - peakNormal);
 
+/** จุดกริดทุก `step` องศาในช่วง lat × lon (แถวละ lat) */
+const grid = ([la0, la1]: number[], [lo0, lo1]: number[], step: number) => {
+  const pts: number[][] = [];
+  for (let a = la0; a <= la1 + 1e-9; a += step)
+    for (let o = lo0; o <= lo1 + 1e-9; o += step) pts.push([+a.toFixed(2), +o.toFixed(2)]);
+  return pts;
+};
+
 const out = {
   note: 'สร้างโดย scripts/build-forecast-normals.ts — ห้ามแก้ด้วยมือ',
-  attribution: 'Open-Meteo (CC BY 4.0) · ECMWF IFS ENS · GloFAS (Copernicus Emergency Management Service)',
+  attribution:
+    'Open-Meteo (CC BY 4.0) · ECMWF IFS ENS + IFS 9 km · GloFAS (Copernicus Emergency Management Service)',
   ensembleModel: 'ecmwf_ifs025',
-  rainPoints: [
-    [13.5, 100.5],
-    [13.5, 100.75],
-    [13.75, 100.5],
-    [13.75, 100.75],
-  ],
+  // จุดคงที่ครอบขอบเขตแบบจำลอง (lat 13.46–13.96, lon 100.32–100.92) — เลือกจุดใกล้หมุดในเครื่อง ไม่ส่งตำแหน่ง
+  rainPoints: grid([13.5, 14.0], [100.25, 101.0], 0.25), // ช่อง ENS 0.25°
+  detModel: 'ecmwf_ifs',
+  detPoints: grid([13.45, 13.95], [100.3, 100.9], 0.1), // ช่อง IFS ~9 กม.
   seaPoint: [13.45, 100.6],
   riverPoint: RIVER,
   flow: {

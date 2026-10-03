@@ -15,6 +15,10 @@ const URLS = {
     `https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${list(cfg.rainPoints, 0)}` +
     `&longitude=${list(cfg.rainPoints, 1)}&hourly=precipitation&models=${cfg.ensembleModel}` +
     `&cell_selection=nearest&forecast_days=${DAYS}&${TZ}`,
+  deterministic:
+    `https://api.open-meteo.com/v1/forecast?latitude=${list(cfg.detPoints, 0)}` +
+    `&longitude=${list(cfg.detPoints, 1)}&hourly=precipitation&models=${cfg.detModel}` +
+    `&cell_selection=nearest&forecast_days=${DAYS}&${TZ}`,
   marine:
     `https://marine-api.open-meteo.com/v1/marine?latitude=${cfg.seaPoint[0]}&longitude=${cfg.seaPoint[1]}` +
     `&hourly=sea_level_height_msl&forecast_days=${DAYS}&${TZ}`,
@@ -37,8 +41,13 @@ export function fetchForecast(): Promise<ForecastInput> {
     getJson<RawForecast['ensemble'] | RawForecast['ensemble'][number]>(URLS.ensemble),
     getJson<RawForecast['marine']>(URLS.marine),
     getJson<RawForecast['flood']>(URLS.flood),
-  ]).then(([ens, marine, flood]) =>
-    parseForecast({ ensemble: Array.isArray(ens) ? ens : [ens], marine, flood }, new Date()),
+    // พยากรณ์ 9 กม. เป็นส่วนเสริม — ถ้าดึงไม่ได้ยังแสดงส่วนอื่นได้
+    getJson<NonNullable<RawForecast['deterministic']>>(URLS.deterministic).catch(() => null),
+  ]).then(([ens, marine, flood, det]) =>
+    parseForecast(
+      { ensemble: Array.isArray(ens) ? ens : [ens], deterministic: det, marine, flood },
+      new Date(),
+    ),
   );
   cache = { at: Date.now(), p };
   p.catch(() => (cache = null)); // ล้มเหลว → ลองใหม่ได้ทันที

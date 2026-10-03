@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { buildGrid } from '../src/sim/grid';
-import { dayParams, forecastLocation, type ForecastDayInput } from '../src/sim/forecast';
+import { FORECAST_CONFIG, dayParams, forecastLocation, type ForecastDayInput } from '../src/sim/forecast';
 import { nestBoundary } from '../src/sim/nest';
 import { cellOf, readCell } from '../src/sim/probe';
 import { simulate } from '../src/sim/simulate';
@@ -17,8 +17,10 @@ it('พื้นที่ศึกษา: ความลึกต่อสม�
     date: '2026-10-03',
     tide: 1.9,
     q: 9000,
-    rain: [rates, rates, rates, rates],
-    total: [[], [], [], []],
+    rain: FORECAST_CONFIG.rainPoints.map(() => rates),
+    total: [],
+    detRain: [],
+    detTotal: [],
   };
   const r = forecastLocation(og, sg, lat, lon, { fetched: '', days: [d] })!;
   expect(r.grid).toBe('study');

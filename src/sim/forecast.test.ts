@@ -7,6 +7,7 @@ import {
   dayParams,
   flowFromDischarge,
   forecastLocation,
+  nearestDetPoint,
   nearestRainPoint,
   parseForecast,
   peakRainRate,
@@ -25,6 +26,8 @@ const day = (rates: number[], extra: Partial<ForecastDayInput> = {}): ForecastDa
   q: null,
   rain: cfg.rainPoints.map(() => rates),
   total: cfg.rainPoints.map(() => rates.map((r) => r * 3)),
+  detRain: cfg.detPoints.map(() => null),
+  detTotal: cfg.detPoints.map(() => null),
   ...extra,
 });
 const input = (...days: ForecastDayInput[]): ForecastInput => ({ fetched: '2026-10-02T12:00:00Z', days });
@@ -48,8 +51,18 @@ describe('แปลงพยากรณ์เป็นพารามิเต�
     expect(peakRainRate([null, 3, 3, 3])).toBeCloseTo(3, 9);
     expect(peakRainRate([5, 5])).toBe(0);
   });
-  it('nearestRainPoint เลือกจุดที่ใกล้ที่สุด', () => {
+  it('nearestRainPoint / nearestDetPoint เลือกจุดที่ใกล้ที่สุด', () => {
     cfg.rainPoints.forEach(([la, lo], k) => expect(nearestRainPoint(la + 0.01, lo - 0.01)).toBe(k));
+    cfg.detPoints.forEach(([la, lo], k) => expect(nearestDetPoint(la + 0.01, lo - 0.01)).toBe(k));
+  });
+  it('จุดคงที่ครอบทั้งขอบเขตแบบจำลอง: ทุกตำแหน่งในกริดอยู่ห่างจุดที่ใกล้สุดไม่เกินครึ่งช่อง', () => {
+    for (let la = 13.46; la <= 13.96; la += 0.02)
+      for (let lo = 100.32; lo <= 100.92; lo += 0.02) {
+        const [a, o] = cfg.rainPoints[nearestRainPoint(la, lo)];
+        expect(Math.max(Math.abs(a - la), Math.abs(o - lo))).toBeLessThanOrEqual(0.125 + 1e-9);
+        const [b, p] = cfg.detPoints[nearestDetPoint(la, lo)];
+        expect(Math.max(Math.abs(b - la), Math.abs(p - lo))).toBeLessThanOrEqual(0.05 + 1e-9);
+      }
   });
 });
 
@@ -106,6 +119,19 @@ it('โอกาสฝนตก/ฝนหนัก นับจากฝนร�
   expect(r.totalMax).toBe(120);
 });
 
+it('พยากรณ์หลัก 9 กม. ใช้ช่องที่ใกล้หมุด และความลึกเท่ากับการจำลองเต็ม', () => {
+  const d = day([0]);
+  const dp = nearestDetPoint(BANGNA[0], BANGNA[1]);
+  d.detRain = cfg.detPoints.map((_, k) => (k === dp ? 150 : 1));
+  d.detTotal = cfg.detPoints.map((_, k) => (k === dp ? 450 : 3));
+  const r = forecastLocation(grid, null, BANGNA[0], BANGNA[1], input(d))!;
+  expect(r.detPoint).toBe(dp);
+  const c = cellOf(grid, BANGNA[0], BANGNA[1]);
+  const full = readCell(grid, simulate(grid, { ...dayParams(d), rain: 150 }), c).depth;
+  expect(r.days[0].det).toEqual({ rate: 150, total: 450, depth: expect.closeTo(full, 6) });
+  expect(forecastLocation(grid, null, BANGNA[0], BANGNA[1], input(day([0])))!.days[0].det).toBeNull();
+});
+
 describe('parseForecast', () => {
   const hours = (date: string) =>
     Array.from({ length: 24 }, (_, h) => `${date}T${String(h).padStart(2, '0')}:00`);
@@ -119,6 +145,10 @@ describe('parseForecast', () => {
   });
   const raw = {
     ensemble: cfg.rainPoints.map((_, k) => ens(k + 1)),
+    deterministic: [
+      { hourly: { time, precipitation: time.map((_, i) => (i >= 36 && i < 39 ? 4 : 0)) } },
+      { hourly: { time, precipitation: time.map(() => null) } },
+    ],
     marine: {
       hourly: { time, sea_level_height_msl: time.map((_, i) => (i === 40 ? 1.9 : i === 60 ? null : 0.5)) },
     },
@@ -135,6 +165,9 @@ describe('parseForecast', () => {
     expect(d4.rain[1]).toEqual([0, 12]);
     expect(d3.total[0]).toEqual([9, 0]);
     expect(d4.total[1]).toEqual([0, 36]);
+    expect(d3.detRain).toEqual([4, null]);
+    expect(d3.detTotal).toEqual([12, null]);
+    expect(d4.detRain[0]).toBe(0);
   });
   it('หลัง 17:00 UTC (เที่ยงคืนไทย) "พรุ่งนี้" เลื่อนไปหนึ่งวัน', () => {
     const f = parseForecast(raw, new Date('2026-10-02T17:30:00Z'));

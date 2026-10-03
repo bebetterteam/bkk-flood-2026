@@ -2,6 +2,7 @@
  * พยากรณ์ "พรุ่งนี้ + 7 วัน" ที่จุดเดียว — แปลงพยากรณ์อากาศ (Open-Meteo) เป็นพารามิเตอร์ของแบบจำลองรายวัน — pure
  *   ฝน      : ECMWF ENS 51 สมาชิก, ช่วง 3 ชม. ที่ฝนมากที่สุดของวัน → rain = รวม/3 มม./ชม., dur = 3
  *             + โอกาสฝนตก / ฝนหนัก จากฝนรวมรายวัน (เกณฑ์กรมอุตุนิยมวิทยา) แสดงคู่กับโอกาสท่วม
+ *             + ECMWF IFS ~9 กม. (พยากรณ์หลักชุดเดียว) ที่ช่องใกล้หมุด → "ฝนที่น่าจะตกตรงนี้"
  *   ทะเลหนุน : ระดับน้ำทะเลสูงสุดของวันที่ปากแม่น้ำ → tide
  *   น้ำเหนือ : GloFAS ที่บางไทร แปลงด้วยส่วนต่างจากค่าปกติ (config/forecast.json) → flow
  * ฝนไม่เปลี่ยนน้ำจากภายนอก (reach) จึงจำลองวันละครั้งแบบไม่มีฝน แล้วบวกน้ำฝนขังของแต่ละสมาชิกด้วย `pondedRain` (ผลเท่ากันทุกหลัก)
@@ -37,6 +38,9 @@ export interface ForecastDayInput {
   rain: number[][];
   /** [จุดฝน][สมาชิก] ฝนรวมทั้งวัน (มม.) */
   total: number[][];
+  /** [จุด IFS 9 กม.] ความแรงฝนช่วง 3 ชม. ที่มากที่สุด (มม./ชม.) / ฝนรวมทั้งวัน (มม.) — ว่างถ้าไม่มีข้อมูล */
+  detRain: (number | null)[];
+  detTotal: (number | null)[];
 }
 export interface ForecastInput {
   /** เวลาที่ดึงข้อมูล (ISO) */
@@ -66,16 +70,20 @@ export function peakRainRate(hourly: ArrayLike<number | null>, w = RAIN_WINDOW):
   return best / w;
 }
 
-/** จุดฝนใน config ที่ใกล้ที่สุด (คิดในเครื่อง) */
-export function nearestRainPoint(lat: number, lon: number): number {
+/** index ของจุดใน `pts` ที่ใกล้ (lat, lon) ที่สุด — คิดในเครื่อง ไม่ส่งตำแหน่ง */
+export function nearestPoint(pts: readonly (readonly number[])[], lat: number, lon: number): number {
   let best = 0,
     bd = Infinity;
-  cfg.rainPoints.forEach(([a, o], k) => {
+  pts.forEach(([a, o], k) => {
     const d = (a - lat) ** 2 + ((o - lon) * Math.cos((lat * Math.PI) / 180)) ** 2;
     if (d < bd) [bd, best] = [d, k];
   });
   return best;
 }
+/** ช่อง ENS 0.25° ที่ใกล้ที่สุด */
+export const nearestRainPoint = (lat: number, lon: number) => nearestPoint(cfg.rainPoints, lat, lon);
+/** ช่อง IFS 9 กม. ที่ใกล้ที่สุด */
+export const nearestDetPoint = (lat: number, lon: number) => nearestPoint(cfg.detPoints, lat, lon);
 
 /** พารามิเตอร์ของวันหนึ่ง (ไม่มีฝน — ฝนบวกทีหลังรายสมาชิก) ทุกระบบป้องกันเปิด ไม่มีทรุดเพิ่ม เหมือน preset */
 export const dayParams = (d: ForecastDayInput): SimParams => ({
@@ -106,6 +114,8 @@ export interface ForecastDay {
   /** ฝนรวมทั้งวัน (มม.): มัธยฐาน / สูงสุดของสมาชิก */
   totalMed: number;
   totalMax: number;
+  /** พยากรณ์หลัก IFS 9 กม. ที่ช่องใกล้หมุด: ฝนแรงสุด 3 ชม. (มม./ชม.), ฝนรวม (มม.), ความลึกที่จุดถ้าเป็นตามนี้ (ม.) — null ถ้าไม่มีข้อมูล */
+  det: { rate: number; total: number; depth: number } | null;
   /** ขีดระบายน้ำวันนั้น (มม./ชม.) — ฝนเกินค่านี้จึงขัง */
   cap: number;
   /** ฝนต้องแรงเท่าไร (มม./ชม. นาน 3 ชม.) จุดนี้จึงท่วมเกิน FLOOD_DEPTH — 0 = ท่วมจากน้ำภายนอกอยู่แล้ว, null = ฝนอย่างเดียวไม่ถึง */
@@ -119,6 +129,7 @@ export interface ForecastResult {
   grid: GridKind;
   fetched: string;
   rainPoint: number;
+  detPoint: number;
   days: ForecastDay[];
 }
 
@@ -145,19 +156,23 @@ export function forecastLocation(
   const g: Grid = useStudy ? study! : overview;
   const c = useStudy ? sc : cellOf(overview, lat, lon);
   if (c < 0 || g.kind[c]) return null;
-  const rp = nearestRainPoint(lat, lon);
+  const rp = nearestRainPoint(lat, lon),
+    dp = nearestDetPoint(lat, lon);
   const days = input.days.map((d): ForecastDay => {
     const P = dayParams(d);
     const ov = simulate(overview, P);
     const r = useStudy ? simulate(study!, P, nestBoundary(overview, ov, study!)) : ov;
     const ext = Math.max(0, r.tExt[c]);
     const cap = drainCap(P, r.riverMid);
+    const depthAt = (rate: number) => ext + pondedRain(Math.max(0, rate - cap) * P.dur, g.pond[c], r.tExt[c]);
+    const dr = d.detRain[dp],
+      dt = d.detTotal[dp];
     const rates = d.rain[rp] ?? [];
     const depths: number[] = [],
       causes = [0, 0, 0, 0];
     let wet = 0;
     for (const rate of rates) {
-      const depth = ext + pondedRain(Math.max(0, rate - cap) * P.dur, g.pond[c], r.tExt[c]);
+      const depth = depthAt(rate);
       depths.push(depth);
       if (depth > FLOOD_DEPTH) {
         wet++;
@@ -181,6 +196,7 @@ export function forecastLocation(
       heavyChance: share(HEAVY_DAY_MM),
       totalMed: totals.length ? quantile(totals, 0.5) : 0,
       totalMax: totals.length ? totals[totals.length - 1] : 0,
+      det: dr == null || dt == null ? null : { rate: dr, total: dt, depth: depthAt(dr) },
       cap,
       rainNeeded: rainNeeded(ext, g.pond[c], cap, P.dur),
       tide: d.tide,
@@ -189,7 +205,7 @@ export function forecastLocation(
       members: rates.length,
     };
   });
-  return { grid: useStudy ? 'study' : 'overview', fetched: input.fetched, rainPoint: rp, days };
+  return { grid: useStudy ? 'study' : 'overview', fetched: input.fetched, rainPoint: rp, detPoint: dp, days };
 }
 
 // ---------- แปลงคำตอบของ Open-Meteo (ใช้บน main thread; pure จึงเทสต์ใน Node ได้) ----------
@@ -200,6 +216,8 @@ interface Hourly {
 export interface RawForecast {
   /** Ensemble API — อาร์เรย์ตามลำดับ cfg.rainPoints */
   ensemble: Hourly[];
+  /** Forecast API (IFS 9 กม.) — อาร์เรย์ตามลำดับ cfg.detPoints; null ถ้าดึงไม่ได้ (ไม่บังคับ) */
+  deterministic: Hourly[] | null;
   marine: Hourly;
   flood: { daily: { time: string[]; river_discharge: (number | null)[] } };
 }
@@ -229,10 +247,23 @@ export function parseForecast(raw: RawForecast, now: Date): ForecastInput {
         .map((k) => hoursOf(h, k, date))
         .filter((hrs) => hrs.some((v) => v != null)),
     );
+    const sum = (hrs: (number | null)[]) => hrs.reduce<number>((a, v) => a + (v ?? 0), 0);
     const rain = members.map((pt) => pt.map((hrs) => peakRainRate(hrs)));
-    const total = members.map((pt) => pt.map((hrs) => hrs.reduce<number>((a, v) => a + (v ?? 0), 0)));
+    const total = members.map((pt) => pt.map(sum));
+    const det = (raw.deterministic ?? []).map((h) => hoursOf(h, 'precipitation', date));
+    const ok = (hrs: (number | null)[]) => hrs.some((v) => v != null);
+    const detRain = det.map((hrs) => (ok(hrs) ? peakRainRate(hrs) : null));
+    const detTotal = det.map((hrs) => (ok(hrs) ? sum(hrs) : null));
     return [
-      { date, tide: Math.max(...sea), total, q: qi >= 0 ? raw.flood.daily.river_discharge[qi] : null, rain },
+      {
+        date,
+        tide: Math.max(...sea),
+        total,
+        detRain,
+        detTotal,
+        q: qi >= 0 ? raw.flood.daily.river_discharge[qi] : null,
+        rain,
+      },
     ];
   });
   return { fetched: now.toISOString(), days };
