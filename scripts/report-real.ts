@@ -1,5 +1,5 @@
 /** รายงาน MVP 3 Phase A → reports/mvp3-phase-a.md + reports/mvp3-preview.png (แผนที่ 2 มิติ: ตึก ถนน สวน ต้นไม้) */
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { OUT, REPORTS, ROOT, loadConfig } from './lib/config.ts';
 import { encodePng } from './lib/png.ts';
 
@@ -105,6 +105,7 @@ for (const g of green) {
   for (let i = 0; i < tj.count; i++)
     put(t[i * 2] * tj.quantMeters, t[i * 2 + 1] * tj.quantMeters, [20, 110, 40]);
 }
+mkdirSync(REPORTS, { recursive: true });
 writeFileSync(REPORTS + 'mvp3-preview.png', encodePng(w, h, img));
 
 const files = readdirSync(OUT).map((f) => [f, statSync(OUT + f).size] as const);

@@ -24,6 +24,7 @@ import { createWeather } from './weather';
 import { createFloodWater, reflShared } from './flood/floodWater';
 import { CAR_COLORS, carGeometry, createDebris, placeCars } from './flood/props';
 import { createReflection } from './flood/reflection';
+import { disposeObject } from '../dispose';
 
 export type Quality = 'simple' | 'real' | 'high';
 
@@ -313,7 +314,16 @@ export async function createRealisticScene(opts: {
     }
   }
 
-  return { setQuality, update, tick, isActive: () => active };
+  /** คืนค่า renderer/ฉากแบบเรียบง่าย แล้วคืนหน่วยความจำทั้งหมด (สลับแผ่น) */
+  function dispose(): void {
+    setQuality('simple');
+    disposeObject(root);
+    refl.dispose();
+    light.envMap.dispose();
+    reflShared.uRefl.value = null;
+  }
+
+  return { setQuality, update, tick, dispose, isActive: () => active };
 }
 
 export type RealisticScene = Awaited<ReturnType<typeof createRealisticScene>>;

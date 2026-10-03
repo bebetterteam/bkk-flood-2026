@@ -164,7 +164,8 @@ export function buildStudyGrid(inp: StudyInputs): StudyGrid {
     arrivalScale: OVERVIEW_ARRIVAL_SCALE * ratio,
     northInflow: false,
     coreWallBase: inp.riverWallTop,
-    coreSubW: subW[pj * nx + pi] ?? 0.5,
+    // ค่าทรุดที่จุดอ้างอิงปากคลองตลาด (ใช้ร่วมทั้งเมือง) — คิดจากกึ่งกลางช่องที่จุดนั้นตกอยู่ แม้อยู่นอกแผ่นนี้
+    coreSubW: subWeightAt(latAt(pj), lonAt(pi)),
     canal,
     demMsl,
     meta,

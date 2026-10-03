@@ -9,11 +9,11 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint . && prettier --check .",
-    "data:fetch": "node scripts/fetch-dem.ts && node scripts/fetch-dem.ts --source=copernicus && node scripts/fetch-osm.ts && node scripts/fetch-textures.ts",
-    "data:build": "node scripts/build-dem.ts && node scripts/build-osm.ts && node scripts/build-osm-real.ts",
-    "data:report": "node scripts/report.ts && node scripts/report-real.ts",
+    "data:fetch": "node scripts/data.ts --stage=fetch",
+    "data:build": "node scripts/data.ts --stage=build",
+    "data:report": "node scripts/data.ts --stage=report",
     "data:forecast": "node scripts/build-forecast-normals.ts",
-    "data": "npm run data:fetch && npm run data:build && npm run data:report"
+    "data": "node scripts/data.ts"
   },
   "dependencies": {
     "three": "^0.160.1"

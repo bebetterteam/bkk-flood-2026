@@ -3,8 +3,9 @@ import { nearestDistrict } from '../data/places';
 import type { ForecastDay, ForecastResult } from '../sim/forecast';
 import { FLOOD_DEPTH, type CellReading, type ProbeResult } from '../sim/probe';
 import { PRESETS } from '../sim/presets';
+import type { SimParams } from '../sim/simulate';
 import type { PickedLocation } from './locate';
-import { CAUSES, PLACE } from './strings';
+import { CAUSES, PLACE, SLIDERS, type SliderKey } from './strings';
 
 /** ความลึกเต็มแถบ (ม.) */
 const BAR_MAX = 1.5;
@@ -19,6 +20,13 @@ const depthText = (r: CellReading) =>
 /** ระดับโอกาส: 0 ต่ำ (< 20%), 1 ปานกลาง (20–50%), 2 สูง (> 50%) */
 const level = (chance: number) => (chance > 0.5 ? 2 : chance >= 0.2 ? 1 : 0);
 const pctOf = (d: ForecastDay) => Math.round(d.chance * 100);
+/** หัวข้อส่วน + ป้ายบอกว่าเป็นผลจำลองหรือพยากรณ์จริง */
+const secHead = (title: string, tag: 'sim' | 'fc') =>
+  `<div class="sec-h"><b>${title}</b><span class="tag ${tag}">${tag === 'sim' ? PLACE.tagSim : PLACE.tagForecast}</span></div>`;
+/** แถว ป้าย — ค่า (dot = CSS var ของจุดสีแบบเดียวกับแถบเลื่อน) */
+const kv = (label: string, value: string, dot?: string, stack = false) =>
+  `<div class="kv${stack ? ' stack' : ''}"><span>${dot ? `<i class="dot" style="background:var(${dot})"></i>` : ''}${label}</span><b>${value}</b></div>`;
+const fmtOf = (key: SliderKey, v: number) => SLIDERS.find((d) => d.key === key)!.fmt(v);
 const dateText = (date: string, o: Intl.DateTimeFormatOptions) =>
   new Date(date + 'T00:00:00Z').toLocaleDateString('th-TH', { timeZone: 'UTC', ...o });
 
@@ -28,9 +36,9 @@ export type ForecastState = 'idle' | 'loading' | 'error' | ForecastResult | null
 function forecastHtml(fc: ForecastState): string {
   if (fc === 'idle' || fc === null) return '';
   if (fc === 'loading')
-    return `<div class="fc"><div class="k">${PLACE.fcTitle}</div><div class="loading">${PLACE.fcLoading}</div></div>`;
+    return `<section class="sec fc">${secHead(PLACE.fcTitle, 'fc')}<div class="loading">${PLACE.fcLoading}</div></section>`;
   if (fc === 'error')
-    return `<div class="fc"><div class="k">${PLACE.fcTitle}</div><div class="err"><span>${PLACE.fcError}</span><button type="button" class="retry">${PLACE.fcRetry}</button></div></div>`;
+    return `<section class="sec fc">${secHead(PLACE.fcTitle, 'fc')}<div class="err"><span>${PLACE.fcError}</span><button type="button" class="retry">${PLACE.fcRetry}</button></div></section>`;
   const [tm, ...rest] = fc.days;
   if (!tm) return '';
   const need =
@@ -40,7 +48,7 @@ function forecastHtml(fc: ForecastState): string {
         ? PLACE.fcNeedNone
         : PLACE.fcNeed(tm.rainNeeded);
   const depth =
-    tm.depthP90 > FLOOD_DEPTH ? `<div class="in">${PLACE.fcDepth(PLACE.cm(tm.depthP90))}</div>` : '';
+    tm.depthP90 > FLOOD_DEPTH ? `<div class="dp">${PLACE.fcDepth(PLACE.cm(tm.depthP90))}</div>` : '';
   const pct = (x: number) => Math.round(x * 100);
   const days = rest
     .map((d) => {
@@ -58,20 +66,41 @@ function forecastHtml(fc: ForecastState): string {
     })
     .join('');
   const fetched = new Date(fc.fetched).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-  return `<div class="fc">
-      <div class="k">${PLACE.fcTitle}</div>
+  const det = tm.det
+    ? kv(
+        PLACE.fcDetLabel,
+        PLACE.fcDetValue(
+          tm.det.total,
+          tm.det.rate,
+          tm.det.depth > FLOOD_DEPTH ? PLACE.fcDetFlood(PLACE.cm(tm.det.depth)) : PLACE.fcDetDry,
+        ),
+        undefined,
+        true,
+      )
+    : '';
+  return `<section class="sec fc">
+      ${secHead(PLACE.fcTitle, 'fc')}
+      <div class="sub">${PLACE.fcNote1}</div>
       <div class="tm lvl-${level(tm.chance)}" title="${PLACE.fcChanceHint(tm.members)}">
         <div class="pc">${pctOf(tm)}%</div><div class="lv">${PLACE.fcLevels[level(tm.chance)]} ${causeChip(tm.cause)}</div>
         <div class="tl">${PLACE.fcTomorrow(dateText(tm.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</div>
       </div>
-      <div class="rn">${PLACE.fcRain(pct(tm.rainChance), pct(tm.heavyChance), tm.totalMed, tm.totalMax)}</div>
-      ${tm.det ? `<div class="in">${PLACE.fcDet(tm.det.total, tm.det.rate, tm.det.depth > FLOOD_DEPTH ? PLACE.fcDetFlood(PLACE.cm(tm.det.depth)) : PLACE.fcDetDry)}</div>` : ''}
       ${depth}
-      <div class="in">${PLACE.fcInputs(tm.rainMax, tm.tide, tm.flow)}</div>
-      <div class="need">${need}</div>
-      ${days ? `<ol>${days}</ol><div class="in hint">${PLACE.fcStripHint}</div>` : ''}
-      <p class="fine">${PLACE.fcFetched(fetched)} · ${PLACE.fcSource}<br>${PLACE.fcNote}</p>
-    </div>`;
+      <div class="fc-sec"><div class="h">${PLACE.fcSecRain}</div>
+        ${kv(PLACE.fcRainChance, `${pct(tm.rainChance)}%`)}
+        ${kv(PLACE.fcHeavyChance, `${pct(tm.heavyChance)}%`)}
+        ${kv(PLACE.fcTotalLabel, PLACE.fcTotal(tm.totalMed, tm.totalMax))}
+        ${det}
+      </div>
+      <div class="fc-sec"><div class="h">${PLACE.fcSecInputs}</div>
+        ${kv(PLACE.fcInRain, PLACE.fcRate(tm.rainMax), '--rain')}
+        ${kv(PLACE.fcInTide, PLACE.fcM(tm.tide), '--sea')}
+        ${kv(PLACE.fcInFlow, PLACE.fcFlow(tm.flow), '--north')}
+      </div>
+      <div class="fc-sec"><div class="h">${PLACE.fcSecNeed}</div><div class="need">${need}</div></div>
+      ${days ? `<div class="fc-sec"><div class="h">${PLACE.fcSecWeek}</div><ol>${days}</ol><div class="hint">${PLACE.fcStripHint}</div></div>` : ''}
+      <details class="fine"><summary>${PLACE.fcFetched(fetched)} · ${PLACE.fcAbout}</summary>${PLACE.fcSource}<br>${PLACE.fcNote}</details>
+    </section>`;
 }
 
 export interface PromptActions {
@@ -89,6 +118,7 @@ export function createPlaceCard(
   let probe: ProbeResult | null = null;
   let loading = false;
   let now: CellReading | null = null;
+  let params: SimParams | null = null;
   let forecast: ForecastState = 'idle';
   /** การ์ดชวน (ยังไม่มีตำแหน่ง) — แสดงเมื่อเปิดโหมดพื้นที่ศึกษาครั้งแรก */
   let prompt: PromptActions | null = null;
@@ -128,17 +158,28 @@ export function createPlaceCard(
             : probe?.canal
               ? PLACE.onCanal
               : '';
-    const meta = [
-      PLACE.near(nearestDistrict(loc.lat, loc.lon)),
-      `${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}`,
-      loc.source === 'gps' ? PLACE.sourceGps(loc.accuracy ?? 0) : PLACE.sourcePin,
-      probe ? (probe.grid === 'study' ? PLACE.dataStudy : PLACE.dataOverview) : '',
-    ].filter(Boolean);
+    const src =
+      loc.source === 'gps'
+        ? `<span class="pill" title="${PLACE.srcGpsHint}">${PLACE.srcGps(loc.accuracy ?? 0)}</span>`
+        : `<span class="pill">${PLACE.srcPin}</span>`;
+    const fine = probe?.grid === 'study';
+    const res = probe
+      ? `<div class="res"><span>${PLACE.resLabel}</span><span class="badge ${fine ? 'fine' : ''}">${fine ? PLACE.resFine : PLACE.resCoarse}</span>
+           <p>${fine ? PLACE.resStudy : PLACE.resOverview}</p></div>`
+      : '';
+    const locHtml = `<div class="loc">
+        <div class="nm">📍 ${PLACE.near(nearestDistrict(loc.lat, loc.lon))}</div>
+        <div class="pills"><span class="pill co">${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}</span>${src}</div>
+        ${res}
+      </div>`;
     const land = probe && probe.kind === 0;
     const nowHtml =
       now && land
-        ? `<div class="now"><div class="k">${PLACE.now}</div><div class="v ${now.depth > FLOOD_DEPTH ? 'wet' : ''}">${depthText(now)}</div>${causeChip(now.cause)}
-           <div class="g">${PLACE.ground} ${now.ground.toFixed(2)} ม.</div></div>`
+        ? `<section class="sec now">${secHead(PLACE.nowTitle, 'sim')}
+           <div class="sub">${PLACE.nowNote}</div>
+           <div class="vr"><div class="v ${now.depth > FLOOD_DEPTH ? 'wet' : ''}">${depthText(now)}</div>${causeChip(now.cause)}</div>
+           ${params ? `<div class="g">${PLACE.nowParams(fmtOf('rain', params.rain), fmtOf('dur', params.dur), fmtOf('flow', params.flow), fmtOf('tide', params.tide))}</div>` : ''}
+           <div class="g">${PLACE.ground} ${now.ground.toFixed(2)} ม.</div></section>`
         : '';
     const rows =
       probe && land
@@ -158,13 +199,12 @@ export function createPlaceCard(
         : '';
     root.innerHTML = `
       <div class="head"><b>${PLACE.title}</b><button class="x" type="button" aria-label="${PLACE.close}">×</button></div>
-      <div class="meta">${meta.map((m) => `<div>${m}</div>`).join('')}</div>
+      ${locHtml}
       ${special ? `<div class="note">${special}</div>` : ''}
       ${nowHtml}
       ${land ? forecastHtml(forecast) : ''}
       ${loading ? `<div class="loading">${PLACE.probing}</div>` : ''}
-      ${rows ? `<table><thead><tr><th>${PLACE.colScenario}</th><th>${PLACE.colDepth}</th><th>${PLACE.colCause}</th></tr></thead><tbody>${rows}</tbody></table>` : ''}
-      ${summary ? `<p class="sum">${summary}</p>` : ''}
+      ${rows ? `<section class="sec">${secHead(PLACE.presetsTitle, 'sim')}<table><thead><tr><th>${PLACE.colScenario}</th><th>${PLACE.colDepth}</th><th>${PLACE.colCause}</th></tr></thead><tbody>${rows}</tbody></table>${summary ? `<p class="sum">${summary}</p>` : ''}</section>` : ''}
       <div class="acts"><button type="button" class="go">${PLACE.goTo}</button><button type="button" class="clr">${PLACE.clear}</button></div>
       <p class="fine">${PLACE.privacy}<br>${PLACE.disclaimer}</p>`;
     root.querySelector<HTMLButtonElement>('.x')!.onclick = () => (root.hidden = true);
@@ -196,8 +236,17 @@ export function createPlaceCard(
       render();
     },
     /** ค่าจากผลการจำลองปัจจุบัน (อัปเดตเมื่อขยับแถบเลื่อน) */
-    setNow(r: CellReading | null): void {
+    setNow(r: CellReading | null, p?: SimParams): void {
+      const pChanged =
+        !!p &&
+        (!params ||
+          p.rain !== params.rain ||
+          p.dur !== params.dur ||
+          p.flow !== params.flow ||
+          p.tide !== params.tide);
+      if (p) params = { ...p };
       const changed =
+        pChanged ||
         !now ||
         !r ||
         Math.abs(now.depth - r.depth) > 1e-4 ||

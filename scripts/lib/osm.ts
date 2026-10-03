@@ -1,6 +1,6 @@
 /** อ่านและแปลง element ของ OSM (Overpass `out geom`) เป็นพิกัดเมตรท้องถิ่น */
 import { readFileSync } from 'node:fs';
-import { RAW, type StudyConfig } from './config.ts';
+import { RAW_OSM, type StudyConfig } from './config.ts';
 import { assembleRings, clipRing, projector, simplifyRing, type Pt, type Ring } from './geom.ts';
 
 export type OsmGeom = { lat: number; lon: number }[];
@@ -15,7 +15,7 @@ export interface OsmEl {
   members?: { type: string; role: string; geometry?: OsmGeom }[];
 }
 
-export const loadOsm = (f: string): OsmEl[] => JSON.parse(readFileSync(RAW + 'osm/' + f, 'utf8')).elements;
+export const loadOsm = (f: string): OsmEl[] => JSON.parse(readFileSync(RAW_OSM + f, 'utf8')).elements;
 
 export function pointInRing(x: number, y: number, r: Ring): boolean {
   let inside = false;

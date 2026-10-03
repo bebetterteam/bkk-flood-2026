@@ -13,11 +13,13 @@ npm test          # Vitest (src/, scripts/, tests/ — tests/ ใช้ข้อ
 npm run lint      # ESLint + Prettier --check
 npx prettier --write .   # จัดรูปแบบ
 
-# pipeline ข้อมูลพื้นที่ศึกษา (MVP 2) — รันแบบ offline ครั้งเดียว ผลลัพธ์ commit ไว้แล้ว
-npm run data:fetch    # ดึง DEM + OSM ดิบ → data/raw/ (gitignored)
-npm run data:build    # → public/data/study-area/
-npm run data:report   # → reports/phase-a.md + reports/dem-preview.png
+# pipeline ข้อมูลพื้นที่ศึกษา (แบ่งแผ่น) — รันแบบ offline ผลลัพธ์ commit ไว้แล้ว
+# ไม่ระบุแผ่น = ทุกแผ่นใน config.built; --tile=r2c1 หรือ --tiles=r2c1,r3c3 | all (ทุกแผ่นที่ตัด กทม.)
+npm run data:fetch    # ดึง DEM + ขอบเขต กทม./เขต + OSM ดิบต่อแผ่น → data/raw/ (gitignored)
+npm run data:build    # → public/data/study-area/<แผ่น>/ + index.json + public/data/bangkok-districts.json
+npm run data:report   # → reports/tiles/<แผ่น>/ (phase-a.md, dem-preview.png, mvp3-*)
 npm run data          # ทั้งสามขั้น
+npm run data:build -- --tile=r5c1   # เพิ่มแผ่นใหม่: ใส่ id ใน config.built ก่อน แล้วรัน data ทั้งสามขั้นด้วย --tile
 npm run data:forecast # ค่าปกติน้ำเหนือ GloFAS → config/forecast.json (MVP 6, รันครั้งเดียว ผลลัพธ์ commit ไว้แล้ว)
 ```
 
@@ -30,7 +32,7 @@ src/
   main.ts              ประกอบ grid → sim (worker) → scene → ui + render loop, สลับ 2 โหมด, เปิด window.__SIM/__P/__run/__mode ไว้ตรวจ
   style.css            CSS (ยกมาจากต้นแบบ)
   data/                ข้อมูลภูมิศาสตร์แบบประมาณ: geo.ts (ขอบเขต แม่น้ำ คลอง คันกั้นน้ำ ชายฝั่ง), places.ts (เขต ป้าย สถานีสูบ อุโมงค์)
-                       studyArea.ts โหลดไฟล์พื้นที่ศึกษา (fetch) + config
+                       studyArea.ts โหลดไฟล์พื้นที่ศึกษาต่อแผ่น (fetch) + index แผ่น + เส้นเขต + config
   sim/                 pure TS ห้าม import three.js/DOM (มีเทสต์ purity.test.ts บังคับ)
     coords.ts          กริด NX×NZ, lat/lon ↔ index
     grid.ts            buildGrid(): ความสูงพื้น ชนิดเซลล์ เขื่อน pond factor
@@ -38,10 +40,12 @@ src/
     presets.ts         สถานการณ์ตัวอย่าง
     golden.ts          ตัวเลขอ้างอิงจากต้นแบบ (ใช้ในเทสต์)
     studyGrid.ts       buildStudyGrid(): กริดพื้นที่ศึกษาจาก DEM + OSM (แยกเจ้าพระยา/คลอง, เขื่อน, ค่าตามระยะ)
+    tiles.ts           ตารางแผ่น: tileBbox/tileAt/neighborTile (ใช้ร่วมกับ scripts/)
     nest.ts            nestBoundary(): ผลภาพรวม → แหล่งน้ำที่ขอบพื้นที่ศึกษา
     raster.ts          polygon/เส้น → mask (ใช้ร่วมกับ scripts/)
     worker.ts, client.ts  Web Worker + ตัวเรียก (ผลล่าสุดชนะ)
   scene/               three.js: stage (renderer/camera/lights/fog), terrain, water, walls, buildings, canals, infra, particles (ฝน/การไหล), labels, cameraViews
+                       tileGrid.ts (กรอบแผ่น + ป้ายคลิกได้บนภาพรวม), dispose.ts (คืนหน่วยความจำ GPU ตอนสลับแผ่น)
     frame.ts           Frame = ขนาดกริด + การฉายพิกัด + VEX ของแต่ละโหมด (water/walls/labels/tooltip ใช้ร่วมกัน)
     study/             studyScene.ts (ฉากพื้นที่ศึกษา), buildingGeometry.ts (extrude + รวมตึกเป็น tile 4×4)
     realistic/         MVP 3 โหมดสมจริง (โหลดแยก chunk เมื่อเลือกครั้งแรก):
@@ -49,10 +53,13 @@ src/
                        lighting.ts (Sky + เงาตามกล้อง + env map), weather.ts (ฝนเป็นเส้น + พื้นเปียก),
                        roadGeometry.ts / buildingGeometryReal.ts / landscape.ts = builder แบบ pure (เทสต์ใน Node)
   ui/                  strings.ts (ข้อความไทยทั้งหมด), panel, results (เกจ/สถิติ/คำอธิบาย), legend, tooltip, topbar
-config/study-area.json bbox, ขนาดช่อง, แหล่ง DEM, verticalOffset, ความสูงเขื่อน, ค่าความสูงตึกเริ่มต้น
+config/study-area.json tiling (ตารางแผ่น), defaultTile, built (แผ่นที่มีข้อมูล), ขนาดช่อง, แหล่ง DEM, verticalOffset, ความสูงเขื่อน, ค่าความสูงตึกเริ่มต้น
 scripts/               pipeline (Node 22 รัน .ts ตรง ๆ, typecheck ด้วย scripts/tsconfig.json)
   fetch-dem.ts         FABDEM: ดึงเฉพาะ tile N13E100 ออกจาก zip 1.7 GB ด้วย HTTP Range (lib/zip-range.ts); --source=copernicus
-  fetch-osm.ts         Overpass (สลับ mirror เมื่อ 429/504): ตึก (แบ่ง 4 ส่วน), แม่น้ำ, คลอง
+  data.ts              ตัวรัน pipeline ทั้งสายต่อแผ่น (ตั้ง env TILE ให้แต่ละ script; lib/config.ts อ่าน --tile/TILE)
+  fetch-boundary.ts    ขอบเขต กทม. (admin_level 4) + 50 เขต (admin_level 6) จาก OSM
+  build-index.ts       → study-area/index.json (แผ่นที่ตัด กทม., เขตในแผ่น, ชื่อแผ่น, built) + bangkok-districts.json (ย่อ 25 ม.)
+  fetch-osm.ts         Overpass (lib/overpass.ts สลับ mirror เมื่อ 429/504): ตึก (แบ่ง 4 ส่วน), แม่น้ำ, คลอง
   build-dem.ts         crop + bilinear → dem.f32 + meta.json
   build-osm.ts         ตึก → buildings.bin/.json, river.json, canals.json
   report.ts            รายงาน + preview; calibration จาก data/calibration.json
@@ -62,22 +69,40 @@ scripts/               pipeline (Node 22 รัน .ts ตรง ๆ, typecheck 
   lib/osm.ts           อ่าน/แปลง element OSM (polygonsOf, clipSimplify) ใช้ร่วมกัน
   data.test.ts         ตรวจไฟล์ใน public/data/study-area/
 data/calibration.json  จุดอ้างอิง (ว่างไว้ให้ผู้ใช้กรอก ห้ามแต่งค่า)
-public/data/study-area/ ข้อมูลที่ประมวลผลแล้ว (~3.7 MB)
-reports/               รายงาน Phase A
-tests/                 เทสต์ที่ใช้ข้อมูลจริง: study.test.ts (sim บนกริดจริง), buildings.test.ts (geometry)
+public/data/study-area/ ข้อมูลที่ประมวลผลแล้ว โฟลเดอร์ละแผ่น (<id>/, ~3–6 MB ต่อแผ่น) + index.json
+reports/tiles/<id>/    รายงาน Phase A ต่อแผ่น
+tests/                 เทสต์ที่ใช้ข้อมูลจริง: study.test.ts (sim บนกริดจริง), buildings.test.ts (geometry) — ใช้แผ่น r3c2
+                       tiles.test.ts (ตารางแผ่น/index/กริดทุกแผ่น), tileBudget.test.ts (เพดานสามเหลี่ยม/ต้นไม้ทุกแผ่น)
 ```
+
+## แผ่นพื้นที่ศึกษา (ครอบทั้ง กทม.)
+
+- ตาราง 7 × 7 แผ่น แผ่นละ 0.08° lat × 0.10° lon (~8.9 × 10.8 กม., 360 × 295 ช่อง) เริ่ม lat 13.46 / lon 100.28;
+  id `r{แถว}c{คอลัมน์}` แถว 0 = เหนือสุด; **r3c2 = พื้นที่ศึกษาเดิมของ MVP 2 ทุกหลัก** (ตัวเลขในเทสต์เดิมอ้างแผ่นนี้)
+- แผ่นที่ตัดเขต กทม. มี 33 แผ่น (ครบ 50 เขต); commit ข้อมูลไว้ 9 แผ่นกลางเมือง (`config.built`, r2–r4 × c1–c3)
+  ที่เหลือรัน pipeline เพิ่มทีละแผ่นได้ (ราว 3–6 MB ต่อแผ่น ทั้งเมือง ~150 MB — ยังไม่ได้ตัดสินใจเรื่องที่เก็บ)
+- ขนาดแผ่นเท่าเดิมโดยตั้งใจ: พิกัด Uint16 × 0.25 ม. (≤ 16.4 กม.), mask/texture, เพดานตึก/ต้นไม้/รถ, กล้อง ใช้ได้โดยไม่ต้องแก้
+- runtime โหลดทีละแผ่น: เลือกจาก dropdown/ปุ่มทิศบนแถบบน หรือคลิกป้ายกรอบแผ่นบนภาพรวม; หมุดในแผ่นที่มีข้อมูลสลับไปแผ่นนั้นเอง
+  สลับแผ่น = `disposeStudy()` ทิ้งฉากศึกษา+สมจริง (geometry/material/texture/render target) แล้วสร้างใหม่; คำขอสลับโหมด/แผ่น/คุณภาพเรียงคิว (`serial`)
+  ผลจำลองที่ขอก่อนสลับแผ่นถูกทิ้งด้วย `studyGen`
+- แต่ละแผ่นจำลองแยกกัน ขอบทุกด้านรับน้ำจากผลภาพรวม (nesting) — ระดับน้ำที่รอยต่อแผ่นอาจไม่ต่อกันพอดี
+- `coreSubW` (ค่าทรุดที่ปากคลองตลาด) คิดจากจุดอ้างอิงเดียวกันทุกแผ่น แม้จุดนั้นอยู่นอกแผ่น
+- มุมกล้องตั้งชื่อ (เกาะรัตนโกสินทร์/เยาวราช/คลองเตย) และป้าย `STUDY_LABELS` มีเฉพาะในแผ่นที่จุดนั้นอยู่
+- เส้นเขต (เส้นประม่วง) + ชื่อเขตวาดในโหมดพื้นที่ศึกษาจาก `bangkok-districts.json`
+- **ยังไม่รองรับทะเล:** กริดศึกษาไม่มีช่องทะเล และ `nest.ts` ข้ามช่องภาพรวมที่เป็นทะเล — ต้องแก้ก่อน build แผ่นชายฝั่ง
+  (r5c1, r6c1 บางขุนเทียน) ไม่งั้นน้ำทะเลหนุนเข้าได้ทางแม่น้ำเท่านั้น; กริดภาพรวมจบที่ lon 100.92 (กทม. ถึง 100.94 — ขอบถูก clamp)
 
 ## สองโหมด
 
 |               | ภาพรวมทั้งเมือง                              | พื้นที่ศึกษา (ข้อมูลจริง)                                      |
 | ------------- | -------------------------------------------- | -------------------------------------------------------------- |
-| กริด          | 200 × 168 ช่อง ~330 ม. (สูตร)                | 360 × 295 ช่อง ~30 ม. (FABDEM)                                 |
+| กริด          | 200 × 168 ช่อง ~330 ม. (สูตร)                | 360 × 295 ช่อง ~30 ม. ต่อแผ่น (FABDEM)                         |
 | แม่น้ำ/คลอง   | เส้นประมาณใน `data/geo.ts`                   | OSM polygon (`isMainRiver` แยกเจ้าพระยา)                       |
 | เขื่อน        | ตามช่องติดแม่น้ำ 2.8/2.4 ม.                  | ช่องติดแม่น้ำ `riverWallTop` (config, 2.8 ม.)                  |
 | น้ำเหนือ/ทะเล | น้ำเหนือเข้าขอบบน, ทะเลเป็นแหล่งน้ำ          | **nesting**: ระดับน้ำจากผลภาพรวมที่ขอบพื้นที่ (`nest.ts`)      |
 | โลก 3 มิติ    | 1 หน่วย ≈ 1.08 กม., VEX 0.6, ตึกขยายเกินจริง | 1 หน่วย = 10 ม., พื้น ×3 (`view.terrainExaggeration`), ตึกจริง |
 
-- การจำลองทั้งสองโหมดรันใน Web Worker (`sim/worker.ts`); โหมดศึกษาโหลดข้อมูล (~3.7 MB) ครั้งแรกที่กดสลับ
+- การจำลองทั้งสองโหมดรันใน Web Worker (`sim/worker.ts`); โหมดศึกษาโหลดข้อมูลของแผ่น (~3–6 MB) เมื่อเลือกแผ่น
 - ค่าที่ผูกกับจำนวนช่องถูกเก็บใน `Grid` และแปลงตามขนาดช่อง: `loss` (0.03 ต่อ ~329 ม. → ~0.0027 ต่อ 30 ม.),
   รัศมีเบลอ pond (6 ช่อง ≈ 2 กม. → 66 ช่อง), `arrivalScale` (เวลาแอนิเมชัน) — โหมดภาพรวมได้ค่าเดิมทุกหลัก (golden test)
 - คลองเป็นพื้นดินตาม DEM สำหรับ sim (ไม่ใช่แหล่งน้ำ ไม่กั้นการไหล) มี mask `canal` ไว้วาด/tooltip
@@ -103,9 +128,10 @@ tests/                 เทสต์ที่ใช้ข้อมูลจร
 - เวลาที่วัดใน Node: ถนน ~170 ms (518k สามเหลี่ยม, เสา 4,298), ตึก ~500 ms (1.13 ล้าน), mask+ต้นไม้ ~90 ms
 - เทสต์ `tests/materials.test.ts` ตรวจว่าการแทนที่ chunk ใน shader ของ three.js 0.160 ได้ผลจริง (ถ้าอัปเกรด three ต้องผ่านเทสต์นี้)
 
-## ข้อมูลพื้นที่ศึกษา (MVP 2)
+## ข้อมูลพื้นที่ศึกษา (MVP 2, ต่อแผ่น)
 
-- **bbox / กริด:** lat 13.70–13.78, lon 100.48–100.58 → 360 × 295 ช่อง ช่องละ ~30 × 30 ม. (แก้ใน `config/study-area.json` แล้วรัน `npm run data:build`)
+- **bbox / กริด:** ตาม `tiling` ใน `config/study-area.json` (ดู "แผ่นพื้นที่ศึกษา") → 360 × 295 ช่องต่อแผ่น ช่องละ ~30 × 30 ม.
+  ไฟล์ด้านล่างอยู่ใน `public/data/study-area/<แผ่น>/`; FABDEM tile N13E100 tile เดียวครอบทั้ง กทม.
 - **dem.f32:** Float32 LE, row-major แถวแรก = ขอบเหนือ ค่าที่กึ่งกลางช่อง หน่วยเมตร **อ้างอิง geoid EGM2008**
 - **buildings.bin:** อาร์เรย์ต่อกัน ตำแหน่ง/ความยาวใน `buildings.json.offsets`; พิกัด Uint16 หน่วย 0.25 ม. จากมุม SW ของ bbox;
   ring แรกของแต่ละตึก = outer ที่เหลือ = hole; `heightDm` (เดซิเมตร); `src` 0=`height`, 1=`building:levels`×3.2 ม., 2=ค่าเริ่มต้นตามประเภท
@@ -208,7 +234,7 @@ DEM (FABDEM/Copernicus) อ้างอิง geoid EGM2008 แต่แบบ�
 
 ## Roadmap
 
-1. ~~DEM จริง~~ / ~~ตึก OSM~~ — MVP 2 ทำในพื้นที่ศึกษาแล้ว; ต่อไป: ปรับเทียบ datum ด้วยหมุดระดับจริง แล้วขยาย bbox ทีละเขต
+1. ~~DEM จริง~~ / ~~ตึก OSM~~ / ~~แบ่งแผ่นทั้ง กทม.~~ — ต่อไป: ปรับเทียบ datum ด้วยหมุดระดับจริง, รองรับทะเลในแผ่นชายฝั่ง, build แผ่นที่เหลือ (24 แผ่น)
 2. MVP 3: การไหลแบบ shallow water บน GPU (ดูข้อเสนอในสรุป MVP 2)
 3. มุมมองภาพตัดขวาง (แม่น้ำ–เขื่อน–ถนน–อุโมงค์)
 4. ไทม์ไลน์รายชั่วโมง (กราฟน้ำขึ้นน้ำลง + ฝน)

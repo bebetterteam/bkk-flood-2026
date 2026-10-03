@@ -3,10 +3,12 @@ import { readFileSync } from 'node:fs';
 import cfg from '../config/study-area.json';
 import { buildStudyGrid, type StudyInputs } from '../src/sim/studyGrid';
 
-const DIR = new URL('../public/data/study-area/', import.meta.url).pathname;
-const json = (f: string) => JSON.parse(readFileSync(DIR + f, 'utf8'));
+const ROOT = new URL('../public/data/study-area/', import.meta.url).pathname;
 
-export function loadStudyInputs(verticalOffset = cfg.verticalOffset.value): StudyInputs {
+/** tile: แผ่นที่โหลด (ค่าเริ่มต้น = แผ่นเดิมของ MVP 2 ที่เทสต์ส่วนใหญ่อ้างตัวเลข) */
+export function loadStudyInputs(verticalOffset = cfg.verticalOffset.value, tile = 'r3c2'): StudyInputs {
+  const DIR = ROOT + tile + '/';
+  const json = (f: string) => JSON.parse(readFileSync(DIR + f, 'utf8'));
   return {
     meta: json('meta.json'),
     dem: new Float32Array(readFileSync(DIR + 'dem.f32').buffer.slice(0)),
@@ -16,4 +18,5 @@ export function loadStudyInputs(verticalOffset = cfg.verticalOffset.value): Stud
     riverWallTop: cfg.riverWallTop,
   };
 }
-export const loadStudyGrid = (verticalOffset?: number) => buildStudyGrid(loadStudyInputs(verticalOffset));
+export const loadStudyGrid = (verticalOffset?: number, tile?: string) =>
+  buildStudyGrid(loadStudyInputs(verticalOffset, tile));

@@ -21,7 +21,8 @@ export interface RealisticData {
 }
 
 export async function loadRealisticData(
-  base = import.meta.env.BASE_URL + 'data/study-area/',
+  tile: string,
+  base = import.meta.env.BASE_URL + 'data/study-area/' + tile + '/',
 ): Promise<RealisticData> {
   const get = async (f: string) => {
     const r = await fetch(base + f);

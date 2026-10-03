@@ -19,7 +19,7 @@ export function renderPanel(root: HTMLElement): void {
     '',
   );
   root.innerHTML = `
-  <h1>${T.title}</h1>
+  <div class="brand"><img src="${import.meta.env.BASE_URL}images/logo-128.png" alt="" width="44" height="44"><h1>${T.title}</h1></div>
   <p class="sub">${T.sub}</p>
   <h2>${T.hPresets}</h2>
   <div class="presets" id="presets"></div>

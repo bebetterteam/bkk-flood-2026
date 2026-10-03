@@ -87,5 +87,6 @@ export function createReflection(renderer: THREE.WebGLRenderer) {
       enabled = on;
     },
     isEnabled: () => enabled,
+    dispose: () => rt.dispose(),
   };
 }

@@ -1,44 +1,19 @@
-/** ดึงข้อมูล OSM ผ่าน Overpass → data/raw/osm/*.json  (© OpenStreetMap contributors, ODbL) */
+/** ดึงข้อมูล OSM ของแผ่นหนึ่งผ่าน Overpass → data/raw/osm/<tile>/*.json  ใช้: --tile=r3c2  (© OpenStreetMap contributors, ODbL) */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { RAW, UA, loadConfig } from './lib/config.ts';
+import { RAW_OSM, loadConfig } from './lib/config.ts';
+import { overpass } from './lib/overpass.ts';
 
 const cfg = loadConfig();
 const { south: s, west: w, north: n, east: e } = cfg.bbox;
-const dir = RAW + 'osm/';
+const dir = RAW_OSM;
 mkdirSync(dir, { recursive: true });
 const force = process.argv.includes('--force');
-
-/** เซิร์ฟเวอร์หลักจาก config + mirror สาธารณะ (สลับเมื่อ 429/504) */
-const ENDPOINTS = [
-  cfg.overpassUrl,
-  'https://overpass.private.coffee/api/interpreter',
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-];
-
-async function overpass(query: string): Promise<unknown> {
-  for (let attempt = 1; ; attempt++) {
-    const url = ENDPOINTS[(attempt - 1) % ENDPOINTS.length];
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'User-Agent': UA,
-        Accept: 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'data=' + encodeURIComponent(query),
-    });
-    if (r.ok) return r.json();
-    if (attempt >= 6) throw new Error(`Overpass HTTP ${r.status}: ${(await r.text()).slice(0, 200)}`);
-    console.warn(`  ${new URL(url).host} HTTP ${r.status} ลองเซิร์ฟเวอร์ถัดไป…`);
-    await new Promise((res) => setTimeout(res, 5000 * attempt));
-  }
-}
 
 async function save(name: string, query: string) {
   const path = dir + name + '.json';
   if (existsSync(path) && !force) return console.log('มีแล้ว:', name);
   const t = Date.now();
-  const data = (await overpass(query)) as { elements: unknown[] };
+  const data = (await overpass(cfg.overpassUrl, query)) as { elements: unknown[] };
   writeFileSync(path, JSON.stringify(data));
   console.log(`${name}: ${data.elements.length} elements (${((Date.now() - t) / 1000).toFixed(1)} วิ)`);
 }

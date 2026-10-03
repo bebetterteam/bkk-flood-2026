@@ -71,10 +71,24 @@ body {
   padding: 16px 16px 20px;
   z-index: 5;
 }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+}
+.brand img {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
 h1 {
   font-size: 20px;
   margin: 0 0 2px;
   line-height: 1.3;
+}
+.brand h1 {
+  margin: 0;
 }
 .sub {
   color: var(--muted);
@@ -435,7 +449,8 @@ details p {
 #attrib {
   position: fixed;
   left: 384px;
-  bottom: 12px;
+  /* อยู่เหนือแถบนาฬิกา (#clock กลางจอ bottom 12px สูง ~40px) ไม่งั้นทับปุ่ม "เล่นใหม่" */
+  bottom: 60px;
   z-index: 5;
   font-size: 11px;
   color: var(--muted);
@@ -545,10 +560,129 @@ details p {
   color: var(--ink);
   background: var(--line);
 }
-#place .meta {
+#place .loc {
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 6px 0 8px;
+}
+#place .loc .nm {
+  font-weight: 600;
+  font-size: 13px;
+}
+#place .pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+#place .pill {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
   color: var(--muted);
+  white-space: nowrap;
+}
+#place .pill.co {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+#place .res {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
   font-size: 11.5px;
-  margin: 4px 0 8px;
+  color: var(--muted);
+}
+#place .res p {
+  margin: 0;
+  flex-basis: 100%;
+  font-size: 11px;
+}
+#place .badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 0 6px;
+  border-radius: 4px;
+  color: var(--caution);
+  border: 1px solid currentColor;
+}
+#place .badge.fine {
+  color: var(--ok);
+}
+#place .sec {
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-top: 8px;
+}
+#place .sec-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+#place .sec-h b {
+  font-size: 12.5px;
+}
+#place .tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+#place .tag.sim {
+  color: var(--sea);
+  background: color-mix(in srgb, var(--sea) 14%, transparent);
+}
+#place .tag.fc {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+#place .sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 2px 0 4px;
+}
+#place .kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11.5px;
+  padding: 2px 0;
+}
+#place .kv span {
+  color: var(--muted);
+}
+#place .kv b {
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+#place .kv.stack {
+  flex-direction: column;
+  gap: 0;
+}
+#place .kv.stack b {
+  text-align: left;
+}
+#place .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
 }
 #place .note {
   border-left: 3px solid var(--accent);
@@ -557,20 +691,11 @@ details p {
   padding: 6px 10px;
   margin-bottom: 8px;
 }
-#place .now {
-  display: grid;
-  grid-template-columns: 1fr auto;
+#place .now .vr {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 2px 8px;
-  border: 1px solid var(--line);
-  background: var(--panel-solid);
-  border-radius: 10px;
-  padding: 8px 10px;
-}
-#place .now .k {
-  font-size: 11.5px;
-  color: var(--muted);
-  grid-column: 1 / -1;
+  gap: 8px;
 }
 #place .now .v {
   font-size: 22px;
@@ -581,7 +706,6 @@ details p {
   color: var(--warn);
 }
 #place .now .g {
-  grid-column: 1 / -1;
   font-size: 11.5px;
   color: var(--muted);
 }
@@ -642,10 +766,11 @@ details p {
   border-radius: 50%;
 }
 #place .sum {
-  margin: 8px 0 6px;
+  margin: 6px 0 0;
   font-weight: 500;
 }
 #place .acts {
+  margin-top: 8px;
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
@@ -669,16 +794,25 @@ details p {
   font-size: 10.5px;
   margin: 8px 0 0;
 }
-#place .fc {
-  border: 1px solid var(--line);
-  background: var(--panel-solid);
-  border-radius: 10px;
-  padding: 8px 10px;
-  margin-top: 8px;
+#place .fc-sec {
+  border-top: 1px solid var(--line);
+  margin-top: 6px;
+  padding-top: 6px;
 }
-#place .fc .k {
+#place .fc-sec .h {
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+#place .fc .dp {
   font-size: 11.5px;
   color: var(--muted);
+}
+#place .fc details summary {
+  cursor: pointer;
+}
+#place .fc details[open] summary {
+  margin-bottom: 4px;
 }
 #place .fc .lvl-0 {
   --lvl: var(--ok);
@@ -711,10 +845,8 @@ details p {
   font-size: 11.5px;
   color: var(--muted);
 }
-#place .fc .in,
 #place .fc .need {
   font-size: 11.5px;
-  color: var(--muted);
 }
 #place .fc .need b {
   color: var(--ink);
@@ -756,15 +888,10 @@ details p {
   color: var(--lvl);
   white-space: nowrap;
 }
-#place .fc .rn {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rain);
-  margin: 2px 0;
-}
 #place .fc .hint {
   margin-top: 4px;
   font-size: 10.5px;
+  color: var(--muted);
 }
 #place .fc .err {
   display: flex;
@@ -826,4 +953,47 @@ details p {
     font-size: 11.5px;
     gap: 6px;
   }
+}
+/* เลือกแผ่นพื้นที่ศึกษา */
+#tile-sel {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  max-width: 220px;
+  cursor: pointer;
+}
+#tile-nav button {
+  min-width: 30px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+#tile-nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.tile-lbl {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.tile-lbl:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.lbl.dist {
+  opacity: 0.75;
+  font-size: 11px;
+  font-style: italic;
 }

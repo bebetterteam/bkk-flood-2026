@@ -9,7 +9,10 @@ export interface TopbarCallbacks {
   onCam: (v: string) => void;
   onMode: (m: AppMode) => void;
   onQuality: (q: string) => void;
+  /** เลือกแผ่นพื้นที่ศึกษา (จาก dropdown หรือปุ่มทิศ) */
+  onTile: (id: string) => void;
 }
+export type TileDir = 'n' | 's' | 'e' | 'w';
 
 /** ปุ่มด้านบนขวา (โหมดแสดงผล ป้ายชื่อ มุมกล้อง) + นาฬิกาจำลองด้านล่าง */
 export function createTopbar(
@@ -41,6 +44,27 @@ export function createTopbar(
     .map(([k, n], i) => `<button data-q="${k}"${i ? '' : ' class="on"'}>${n}</button>`)
     .join('');
   bar.querySelector('.seg')!.after(qBox);
+  // เลือกแผ่นพื้นที่ศึกษา + ปุ่มไปแผ่นข้าง ๆ (แสดงเมื่อโหลดรายการแผ่นแล้ว)
+  const tileSel = document.createElement('select');
+  tileSel.id = 'tile-sel';
+  tileSel.title = STUDY.tileTitle;
+  tileSel.hidden = true;
+  tileSel.onchange = () => cb.onTile(tileSel.value);
+  const navBox = document.createElement('span');
+  navBox.className = 'seg';
+  navBox.id = 'tile-nav';
+  navBox.style.display = 'none';
+  navBox.innerHTML = STUDY.tileNav.map(([d, arrow]) => `<button data-dir="${d}">${arrow}</button>`).join('');
+  const navBtns = navBox.querySelectorAll<HTMLButtonElement>('[data-dir]');
+  let navTargets: Partial<Record<TileDir, string>> = {};
+  navBtns.forEach(
+    (b) =>
+      (b.onclick = () => {
+        const id = navTargets[b.dataset.dir as TileDir];
+        if (id) cb.onTile(id);
+      }),
+  );
+  qBox.after(tileSel, navBox);
   const qBtns = qBox.querySelectorAll<HTMLButtonElement>('[data-q]');
   qBtns.forEach(
     (b) =>
@@ -89,13 +113,34 @@ export function createTopbar(
     setQualityBusy(busy: boolean) {
       qBtns.forEach((x) => (x.disabled = busy));
     },
-    setMode(m: AppMode) {
+    setMode(m: AppMode, studyCams: readonly (readonly [string, string])[] = STUDY.cams) {
       qBox.style.display = m === 'study' ? '' : 'none';
+      navBox.style.display = m === 'study' ? '' : 'none';
       modes.forEach((x) => x.classList.toggle('on', x.dataset.mode === m));
-      setCams(m === 'overview' ? TOPBAR.cams : STUDY.cams);
+      setCams(m === 'overview' ? TOPBAR.cams : studyCams);
     },
     setModeBusy(busy: boolean) {
       modes.forEach((x) => (x.disabled = busy));
+      tileSel.disabled = busy;
+      navBtns.forEach((x) => (x.disabled = busy || !navTargets[x.dataset.dir as TileDir]));
+    },
+    /** รายการแผ่นที่มีข้อมูล [id, ชื่อ] */
+    setTiles(list: [string, string][]) {
+      tileSel.innerHTML = list
+        .map(([id, name]) => `<option value="${id}">${STUDY.tileOption(name)}</option>`)
+        .join('');
+      tileSel.hidden = list.length < 2;
+    },
+    /** แผ่นปัจจุบัน + แผ่นข้าง ๆ ที่มีข้อมูล */
+    setTile(id: string, neighbors: Partial<Record<TileDir, string>>, names: Record<string, string>) {
+      tileSel.value = id;
+      navTargets = neighbors;
+      navBtns.forEach((b) => {
+        const t = neighbors[b.dataset.dir as TileDir];
+        b.disabled = !t;
+        const tip = STUDY.tileNav.find(([d]) => d === b.dataset.dir)![2];
+        b.title = t ? `${tip}: ${names[t]}` : STUDY.tileNavNone;
+      });
     },
   };
 }

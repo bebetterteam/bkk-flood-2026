@@ -4,7 +4,7 @@ import { buildRoadGeometry, MARK_RAIL } from '../src/scene/realistic/roadGeometr
 import { buildRealBuildingTiles } from '../src/scene/realistic/buildingGeometryReal';
 import { groundMask, maskMeta, placeTrees } from '../src/scene/realistic/landscape';
 
-const DIR = new URL('../public/data/study-area/', import.meta.url).pathname;
+const DIR = new URL('../public/data/study-area/r3c2/', import.meta.url).pathname;
 const json = (f: string) => JSON.parse(readFileSync(DIR + f, 'utf8'));
 const ab = (f: string) => {
   const b = readFileSync(DIR + f);

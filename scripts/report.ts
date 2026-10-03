@@ -1,6 +1,6 @@
 /** รายงาน Phase A → reports/phase-a.md + reports/dem-preview.png */
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
-import { OUT, RAW, REPORTS, ROOT, loadConfig } from './lib/config.ts';
+import { OUT, RAW, REPORTS, ROOT, TILE, loadConfig } from './lib/config.ts';
 import { encodePng } from './lib/png.ts';
 import { rasterizeLines, rasterizePolygons, type GridMeta } from '../src/sim/raster.ts';
 
@@ -129,7 +129,7 @@ const zeroOutsideRiver = clusters((c) => dem[c] === 0 && !riverMask[c], 4);
 
 // DSM (Copernicus) − DTM (FABDEM)
 let dsmLine = 'ไม่มีไฟล์ Copernicus บนกริดเดียวกัน (รัน data:fetch --source=copernicus แล้ว data:build)';
-const copPath = RAW + 'dem/copernicus_grid.f32';
+const copPath = RAW + 'dem/copernicus_grid-' + TILE + '.f32';
 if (existsSync(copPath)) {
   const cop = new Float32Array(readFileSync(copPath).buffer.slice(0));
   const d = Array.from(cop, (v, c) => v - dem[c]);
@@ -259,7 +259,7 @@ const cl = (xs: { size: number; lat: number; lon: number; max: number; min: numb
 const row = (name: string, q: ReturnType<typeof quant>) =>
   `| ${name} | ${q.n} | ${f2(q.min)} | ${f2(q.p5)} | ${f2(q.med)} | ${f2(q.p95)} | ${f2(q.max)} |`;
 
-const md = `# รายงาน Phase A — ข้อมูลพื้นที่ศึกษา "${cfg.name}"
+const md = `# รายงาน Phase A — ข้อมูลพื้นที่ศึกษา "${meta.name}" (แผ่น ${TILE})
 
 สร้างเมื่อ ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC ด้วย \`npm run data:report\`
 

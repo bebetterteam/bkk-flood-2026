@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { buildBuildingTiles } from '../src/scene/study/buildingGeometry';
 
-const DIR = new URL('../public/data/study-area/', import.meta.url).pathname;
+const DIR = new URL('../public/data/study-area/r3c2/', import.meta.url).pathname;
 const meta = JSON.parse(readFileSync(DIR + 'buildings.json', 'utf8'));
 const buf = readFileSync(DIR + 'buildings.bin');
 const bin = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);

@@ -1,6 +1,6 @@
-/** สร้าง public/data/study-area/dem.f32 + meta.json จาก DEM ดิบ */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { OUT, RAW, loadConfig } from './lib/config.ts';
+/** สร้าง public/data/study-area/<tile>/dem.f32 + meta.json จาก DEM ดิบ */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { OUT, OUT_ROOT, RAW, TILE, loadConfig } from './lib/config.ts';
 import { gridSpec, resampleDem } from './lib/dem.ts';
 
 const cfg = loadConfig();
@@ -19,11 +19,17 @@ writeFileSync(OUT + 'dem.f32', Buffer.from(heights.buffer));
 // เก็บ Copernicus (DSM) บนกริดเดียวกันไว้ใน data/raw เพื่อเทียบในรายงาน (ไม่ใช้ในแอป)
 if (useFab && existsSync(cop)) {
   const c = await resampleDem(cop, cfg, spec);
-  writeFileSync(RAW + 'dem/copernicus_grid.f32', Buffer.from(c.heights.buffer));
+  writeFileSync(RAW + 'dem/copernicus_grid-' + TILE + '.f32', Buffer.from(c.heights.buffer));
 }
 
+// ชื่อแผ่น (เขตหลัก) จาก index.json ที่ build-index สร้าง
+const tileName: string | undefined = existsSync(OUT_ROOT + 'index.json')
+  ? JSON.parse(readFileSync(OUT_ROOT + 'index.json', 'utf8')).tiles.find((t: { id: string }) => t.id === TILE)
+      ?.name
+  : undefined;
 const meta = {
-  name: cfg.name,
+  name: tileName ?? TILE,
+  tile: TILE,
   bbox: cfg.bbox,
   nx: spec.nx,
   nz: spec.nz,

@@ -21,7 +21,7 @@ export const DISTRICTS: readonly (readonly [string, number, number])[] = [
   ['บางกระเจ้า', 13.675, 100.565],
 ];
 
-export type LabelKind = 'big' | 'flow' | 'infra';
+export type LabelKind = 'big' | 'flow' | 'infra' | 'dist';
 /** [ข้อความ, lat, lon, ชนิด?] */
 // prettier-ignore
 export const LABELS: readonly (readonly [string, number, number, LabelKind?])[] = [

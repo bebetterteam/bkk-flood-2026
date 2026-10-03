@@ -1,6 +1,7 @@
-/** โหลดข้อมูลพื้นที่ศึกษาที่ประมวลผลแล้วจาก public/data/study-area/ (สร้างด้วย npm run data) */
+/** โหลดข้อมูลพื้นที่ศึกษาที่ประมวลผลแล้วจาก public/data/study-area/<แผ่น>/ (สร้างด้วย npm run data) */
 import cfg from '../../config/study-area.json';
 import type { StudyInputs, StudyMeta } from '../sim/studyGrid';
+import type { Bbox, Tiling } from '../sim/tiles';
 
 export interface BuildingsMeta {
   count: number;
@@ -22,10 +23,41 @@ export interface StudyData {
 }
 
 export const STUDY_CONFIG = cfg;
+export const STUDY_BASE = import.meta.env.BASE_URL + 'data/study-area/';
 
-export async function loadStudyData(
-  base = import.meta.env.BASE_URL + 'data/study-area/',
-): Promise<StudyData> {
+export interface TileInfo {
+  id: string;
+  bbox: Bbox;
+  /** เขตหลัก 1–2 เขต */
+  name: string;
+  /** [ชื่อเขต, สัดส่วนพื้นที่แผ่น] เรียงจากมากไปน้อย */
+  districts: [string, number][];
+  bangkokShare: number;
+  built: boolean;
+}
+export interface TileIndex {
+  tiling: Tiling;
+  defaultTile: string;
+  tiles: TileInfo[];
+}
+export interface DistrictOutlines {
+  attribution: string;
+  bangkok: [number, number][][];
+  districts: { name: string; nameEn: string; rings: [number, number][][] }[];
+}
+
+const getJson = async <T>(url: string): Promise<T> => {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`โหลด ${url} ไม่สำเร็จ (HTTP ${r.status})`);
+  return r.json();
+};
+/** รายการแผ่นที่ตัด กทม. + สถานะข้อมูล (สร้างด้วย scripts/build-index.ts) */
+export const loadTileIndex = () => getJson<TileIndex>(STUDY_BASE + 'index.json');
+/** เส้นขอบ กทม. และ 50 เขต (OSM แบบย่อ) */
+export const loadDistricts = () =>
+  getJson<DistrictOutlines>(import.meta.env.BASE_URL + 'data/bangkok-districts.json');
+
+export async function loadStudyData(tile: string, base = STUDY_BASE + tile + '/'): Promise<StudyData> {
   const get = async (f: string) => {
     const r = await fetch(base + f);
     if (!r.ok) throw new Error(`โหลด ${f} ไม่สำเร็จ (HTTP ${r.status})`);
