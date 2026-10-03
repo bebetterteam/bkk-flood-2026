@@ -41,15 +41,19 @@ function forecastHtml(fc: ForecastState): string {
         : PLACE.fcNeed(tm.rainNeeded);
   const depth =
     tm.depthP90 > FLOOD_DEPTH ? `<div class="in">${PLACE.fcDepth(PLACE.cm(tm.depthP90))}</div>` : '';
+  const pct = (x: number) => Math.round(x * 100);
   const days = rest
     .map((d) => {
-      const p = pctOf(d);
+      const p = pctOf(d),
+        rp = pct(d.rainChance);
       const title = PLACE.fcDayTitle(
         dateText(d.date, { weekday: 'long', day: 'numeric', month: 'short' }),
+        rp,
+        pct(d.heavyChance),
         p,
-        d.rainMax,
+        d.totalMed,
       );
-      return `<li class="lvl-${level(d.chance)}" title="${title}"><span>${dateText(d.date, { weekday: 'short' })}</span><span class="cb"><i style="height:${Math.max(p, 0)}%"></i></span><b>${p}%</b></li>`;
+      return `<li title="${title}"><span>${dateText(d.date, { weekday: 'short' })}</span><span class="cb"><i style="height:${rp}%"></i></span><b>${rp}%</b><small class="lvl-${level(d.chance)}">${PLACE.fcFloodShort(p)}</small></li>`;
     })
     .join('');
   const fetched = new Date(fc.fetched).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
@@ -59,10 +63,11 @@ function forecastHtml(fc: ForecastState): string {
         <div class="pc">${pctOf(tm)}%</div><div class="lv">${PLACE.fcLevels[level(tm.chance)]} ${causeChip(tm.cause)}</div>
         <div class="tl">${PLACE.fcTomorrow(dateText(tm.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</div>
       </div>
+      <div class="rn">${PLACE.fcRain(pct(tm.rainChance), pct(tm.heavyChance), tm.totalMed, tm.totalMax)}</div>
       ${depth}
       <div class="in">${PLACE.fcInputs(tm.rainMax, tm.tide, tm.flow)}</div>
       <div class="need">${need}</div>
-      ${days ? `<ol>${days}</ol>` : ''}
+      ${days ? `<ol>${days}</ol><div class="in hint">${PLACE.fcStripHint}</div>` : ''}
       <p class="fine">${PLACE.fcFetched(fetched)} · ${PLACE.fcSource}<br>${PLACE.fcNote}</p>
     </div>`;
 }

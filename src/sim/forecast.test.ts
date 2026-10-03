@@ -24,6 +24,7 @@ const day = (rates: number[], extra: Partial<ForecastDayInput> = {}): ForecastDa
   tide: 1.2,
   q: null,
   rain: cfg.rainPoints.map(() => rates),
+  total: cfg.rainPoints.map(() => rates.map((r) => r * 3)),
   ...extra,
 });
 const input = (...days: ForecastDayInput[]): ForecastInput => ({ fetched: '2026-10-02T12:00:00Z', days });
@@ -96,6 +97,15 @@ describe('forecastLocation (กริดภาพรวม)', () => {
   });
 });
 
+it('โอกาสฝนตก/ฝนหนัก นับจากฝนรวมรายวันของจุดที่ใกล้ที่สุด', () => {
+  const d = day([0]);
+  d.total = cfg.rainPoints.map(() => [0, 0.5, 1, 5, 20, 35.1, 80, 120]);
+  const r = forecastLocation(grid, null, BANGNA[0], BANGNA[1], input(d))!.days[0];
+  expect(r.rainChance).toBeCloseTo(6 / 8, 9);
+  expect(r.heavyChance).toBeCloseTo(3 / 8, 9);
+  expect(r.totalMax).toBe(120);
+});
+
 describe('parseForecast', () => {
   const hours = (date: string) =>
     Array.from({ length: 24 }, (_, h) => `${date}T${String(h).padStart(2, '0')}:00`);
@@ -123,6 +133,8 @@ describe('parseForecast', () => {
     expect(d4.q).toBeNull();
     expect(d3.rain[0]).toEqual([3, 0]); // ควบคุม 9 มม. ใน 1 ชม. → 3 มม./ชม.; สมาชิก 1 ฝนวันถัดไป
     expect(d4.rain[1]).toEqual([0, 12]);
+    expect(d3.total[0]).toEqual([9, 0]);
+    expect(d4.total[1]).toEqual([0, 36]);
   });
   it('หลัง 17:00 UTC (เที่ยงคืนไทย) "พรุ่งนี้" เลื่อนไปหนึ่งวัน', () => {
     const f = parseForecast(raw, new Date('2026-10-02T17:30:00Z'));

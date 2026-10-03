@@ -13,7 +13,13 @@ it('พื้นที่ศึกษา: ความลึกต่อสม�
   const lat = 13.7405,
     lon = 100.509; // เยาวราช
   const rates = [0, 60, 150, 300];
-  const d: ForecastDayInput = { date: '2026-10-03', tide: 1.9, q: 9000, rain: [rates, rates, rates, rates] };
+  const d: ForecastDayInput = {
+    date: '2026-10-03',
+    tide: 1.9,
+    q: 9000,
+    rain: [rates, rates, rates, rates],
+    total: [[], [], [], []],
+  };
   const r = forecastLocation(og, sg, lat, lon, { fetched: '', days: [d] })!;
   expect(r.grid).toBe('study');
   const c = cellOf(sg, lat, lon);

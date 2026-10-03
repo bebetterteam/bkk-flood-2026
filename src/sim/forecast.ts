@@ -1,6 +1,7 @@
 /**
  * พยากรณ์ "พรุ่งนี้ + 7 วัน" ที่จุดเดียว — แปลงพยากรณ์อากาศ (Open-Meteo) เป็นพารามิเตอร์ของแบบจำลองรายวัน — pure
  *   ฝน      : ECMWF ENS 51 สมาชิก, ช่วง 3 ชม. ที่ฝนมากที่สุดของวัน → rain = รวม/3 มม./ชม., dur = 3
+ *             + โอกาสฝนตก / ฝนหนัก จากฝนรวมรายวัน (เกณฑ์กรมอุตุนิยมวิทยา) แสดงคู่กับโอกาสท่วม
  *   ทะเลหนุน : ระดับน้ำทะเลสูงสุดของวันที่ปากแม่น้ำ → tide
  *   น้ำเหนือ : GloFAS ที่บางไทร แปลงด้วยส่วนต่างจากค่าปกติ (config/forecast.json) → flow
  * ฝนไม่เปลี่ยนน้ำจากภายนอก (reach) จึงจำลองวันละครั้งแบบไม่มีฝน แล้วบวกน้ำฝนขังของแต่ละสมาชิกด้วย `pondedRain` (ผลเท่ากันทุกหลัก)
@@ -18,6 +19,10 @@ import type { StudyGrid } from './studyGrid';
 export const FORECAST_CONFIG = cfg;
 /** ความยาวช่วงฝนที่ใช้ (ชม.) */
 export const RAIN_WINDOW = 3;
+/** ฝนรวมรายวัน (มม.) ที่นับว่า "ฝนตก" (ตัดฝนปรอยของแบบจำลอง) */
+export const RAIN_DAY_MM = 1;
+/** ฝนรวมรายวัน (มม.) ที่นับว่า "ฝนหนัก" ตามเกณฑ์กรมอุตุนิยมวิทยา (35.1–90 หนัก, > 90 หนักมาก) */
+export const HEAVY_DAY_MM = 35.1;
 /** จำนวนวันที่แสดง: พรุ่งนี้ + 7 วัน */
 export const FORECAST_DAYS = 8;
 
@@ -30,6 +35,8 @@ export interface ForecastDayInput {
   q: number | null;
   /** [จุดฝน][สมาชิก] ความแรงฝนช่วง 3 ชม. ที่มากที่สุดของวัน (มม./ชม.) */
   rain: number[][];
+  /** [จุดฝน][สมาชิก] ฝนรวมทั้งวัน (มม.) */
+  total: number[][];
 }
 export interface ForecastInput {
   /** เวลาที่ดึงข้อมูล (ISO) */
@@ -93,6 +100,12 @@ export interface ForecastDay {
   /** ความแรงฝนช่วง 3 ชม. (มม./ชม.): มัธยฐาน / สูงสุดของสมาชิก */
   rainMed: number;
   rainMax: number;
+  /** สัดส่วนสมาชิกที่ฝนรวม ≥ RAIN_DAY_MM / ≥ HEAVY_DAY_MM (0–1) */
+  rainChance: number;
+  heavyChance: number;
+  /** ฝนรวมทั้งวัน (มม.): มัธยฐาน / สูงสุดของสมาชิก */
+  totalMed: number;
+  totalMax: number;
   /** ขีดระบายน้ำวันนั้น (มม./ชม.) — ฝนเกินค่านี้จึงขัง */
   cap: number;
   /** ฝนต้องแรงเท่าไร (มม./ชม. นาน 3 ชม.) จุดนี้จึงท่วมเกิน FLOOD_DEPTH — 0 = ท่วมจากน้ำภายนอกอยู่แล้ว, null = ฝนอย่างเดียวไม่ถึง */
@@ -153,6 +166,8 @@ export function forecastLocation(
     }
     depths.sort((a, b) => a - b);
     const sortedRates = rates.slice().sort((a, b) => a - b);
+    const totals = (d.total[rp] ?? []).slice().sort((a, b) => a - b);
+    const share = (mm: number) => (totals.length ? totals.filter((t) => t >= mm).length / totals.length : 0);
     const most = Math.max(...causes);
     return {
       date: d.date,
@@ -162,6 +177,10 @@ export function forecastLocation(
       cause: most > 0 ? causes.indexOf(most) : -1,
       rainMed: rates.length ? quantile(sortedRates, 0.5) : 0,
       rainMax: rates.length ? sortedRates[sortedRates.length - 1] : 0,
+      rainChance: share(RAIN_DAY_MM),
+      heavyChance: share(HEAVY_DAY_MM),
+      totalMed: totals.length ? quantile(totals, 0.5) : 0,
+      totalMax: totals.length ? totals[totals.length - 1] : 0,
       cap,
       rainNeeded: rainNeeded(ext, g.pond[c], cap, P.dur),
       tide: d.tide,
@@ -204,14 +223,17 @@ export function parseForecast(raw: RawForecast, now: Date): ForecastInput {
     const sea = hoursOf(raw.marine, 'sea_level_height_msl', date).filter((v): v is number => v != null);
     if (!sea.length) return []; // ไม่มีพยากรณ์ระดับทะเลวันนั้น — ข้ามวัน
     const qi = raw.flood.daily.time.indexOf(date);
-    const rain = raw.ensemble.map((h) =>
+    const members = raw.ensemble.map((h) =>
       Object.keys(h.hourly)
         .filter((k) => k.startsWith('precipitation'))
         .map((k) => hoursOf(h, k, date))
-        .filter((hrs) => hrs.some((v) => v != null))
-        .map((hrs) => peakRainRate(hrs)),
+        .filter((hrs) => hrs.some((v) => v != null)),
     );
-    return [{ date, tide: Math.max(...sea), q: qi >= 0 ? raw.flood.daily.river_discharge[qi] : null, rain }];
+    const rain = members.map((pt) => pt.map((hrs) => peakRainRate(hrs)));
+    const total = members.map((pt) => pt.map((hrs) => hrs.reduce<number>((a, v) => a + (v ?? 0), 0)));
+    return [
+      { date, tide: Math.max(...sea), total, q: qi >= 0 ? raw.flood.daily.river_discharge[qi] : null, rain },
+    ];
   });
   return { fetched: now.toISOString(), days };
 }

@@ -744,11 +744,27 @@ details p {
   display: block;
   width: 100%;
   min-height: 2px;
-  background: var(--lvl);
+  background: var(--rain);
 }
 #place .fc ol b {
   font-weight: 600;
+  color: var(--rain);
+}
+#place .fc ol small {
+  display: block;
+  font-size: 9.5px;
   color: var(--lvl);
+  white-space: nowrap;
+}
+#place .fc .rn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rain);
+  margin: 2px 0;
+}
+#place .fc .hint {
+  margin-top: 4px;
+  font-size: 10.5px;
 }
 #place .fc .err {
   display: flex;
