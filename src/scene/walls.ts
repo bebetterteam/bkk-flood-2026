@@ -3,6 +3,7 @@ import type { Grid } from '../sim/grid';
 import { WALL_RIVER } from '../sim/grid';
 import { wallTop, type SimParams } from '../sim/simulate';
 import { overviewFrame, type Frame } from './frame';
+import type { InfraPart } from './highlight';
 
 const WCOL: Record<number, THREE.Color> = {
   1: new THREE.Color(0x9aa3ab),
@@ -46,5 +47,7 @@ export function createWalls(scene: THREE.Object3D, grid: Grid, f: Frame = overvi
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }
-  return { update };
+  /** โหมดศึกษามีแต่เขื่อนริมแม่น้ำ (ใช้กับกริดภาพรวมจะรวมคันไว้ใน mesh เดียวกัน) */
+  const parts: InfraPart[] = [{ kind: 'wall', mesh }];
+  return { update, parts };
 }

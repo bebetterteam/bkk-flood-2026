@@ -333,18 +333,163 @@ details p {
   font-size: 12px;
   z-index: 5;
   backdrop-filter: blur(8px);
-  min-width: 200px;
+  min-width: 220px;
+}
+#legend .lg-title {
+  font-weight: 700;
+  font-size: 13px;
+}
+#legend .lg-sub {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
 }
 #legend .ramp {
-  height: 10px;
-  border-radius: 5px;
-  margin: 6px 0 3px;
+  height: 12px;
+  border-radius: 6px;
+  margin: 8px 0 0;
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 #legend .ticks {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 20px;
   color: var(--muted);
   font-size: 11px;
+}
+#legend .ticks span {
+  position: absolute;
+  top: 6px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+#legend .ticks span::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  width: 1px;
+  height: 4px;
+  background: var(--muted);
+}
+#legend .ticks span:first-child {
+  transform: none;
+}
+#legend .ticks span:first-child::before {
+  left: 0;
+}
+#legend .ticks span:last-child {
+  transform: translateX(-100%);
+}
+#legend .ticks span:last-child::before {
+  left: auto;
+  right: 0;
+}
+#legend .lg-items {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 14px;
+  margin-top: 8px;
+}
+#legend .lg-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+#legend .lg-item svg {
+  flex: none;
+}
+#legend .lg-btn {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 3px 6px;
+  margin: -4px -7px;
+  cursor: pointer;
+}
+#legend .lg-btn:hover {
+  background: var(--accent-soft);
+}
+#legend .lg-btn.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+#legend .lg-hint {
+  margin-top: 8px;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+#legend .lg-info {
+  width: 300px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  line-height: 1.55;
+}
+#legend .ii-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+#legend .ii-head b {
+  flex: 1;
+}
+#legend .ii-close {
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0 2px;
+}
+#legend .ii-close:hover {
+  color: var(--ink);
+}
+#legend .ii-what {
+  margin: 0 0 8px;
+}
+#legend .ii-row {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+#legend .ii-row span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  padding-top: 1px;
+}
+#legend .ii-row p {
+  margin: 0;
+}
+#legend .ii-off {
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--muted);
+}
+#legend .good {
+  color: var(--ok);
+}
+#legend .bad {
+  color: var(--warn);
+}
+#stage canvas.infra-hover {
+  cursor: pointer;
 }
 #tip {
   position: fixed;
@@ -531,10 +676,11 @@ details p {
 #place {
   position: fixed;
   right: 12px;
-  bottom: 140px;
+  /* วางเหนือ legend ตามความสูงจริง (legend ขยายเมื่อเปิดการ์ดระบบป้องกัน) */
+  bottom: calc(var(--legend-h, 128px) + 24px);
   z-index: 5;
   width: 340px;
-  max-height: calc(100% - 260px);
+  max-height: calc(100% - var(--legend-h, 128px) - 36px - var(--topbar-bottom, 100px));
   overflow-y: auto;
   background: var(--panel);
   backdrop-filter: blur(10px);
@@ -989,20 +1135,26 @@ details p {
 }
 .tile-lbl {
   position: absolute;
-  transform: translate(-50%, -50%);
+  /* มุมซ้ายล่างของป้ายแตะมุมกรอบ (ป้ายอยู่เหนือขอบบนของกรอบ) */
+  transform: translate(-2px, calc(-100% - 4px));
   pointer-events: auto;
   cursor: pointer;
+  font: inherit;
   font-size: 12px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--accent);
-  background: var(--panel);
-  color: var(--ink);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 0;
+  background: #ffb020;
+  color: #2b1d00;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   white-space: nowrap;
 }
-.tile-lbl:hover {
-  background: var(--accent);
-  color: #fff;
+.tile-lbl:hover,
+.tile-lbl:focus-visible {
+  background: #ffc552;
+  outline: 2px solid #fff;
+  outline-offset: 1px;
 }
 .lbl.dist {
   opacity: 0.75;

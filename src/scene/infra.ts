@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PUMPS, TUNNEL } from '../data/places';
 import type { SimParams } from '../sim/simulate';
 import { overviewFrame, type Frame } from './frame';
+import type { InfraPart } from './highlight';
 
 /** ขนาดในหน่วยโลก: รัศมี/ความสูงถังสูบ, รัศมีท่ออุโมงค์; tunnelOnGround = วางอุโมงค์บนพื้นให้มองเห็น (โหมดศึกษา) */
 export interface InfraStyle {
@@ -19,14 +20,15 @@ export function createInfra(
 ) {
   const group = new THREE.Group();
   scene.add(group);
-  const pumps = PUMPS.filter(([la, lo]) => f === overviewFrame || f.inBounds(la, lo)).map(([la, lo]) => {
+  const pumps = PUMPS.flatMap(([la, lo], id) => {
+    if (f !== overviewFrame && !f.inBounds(la, lo)) return [];
     const m = new THREE.Mesh(
       new THREE.CylinderGeometry(style.r, style.r, style.h, 16),
       new THREE.MeshStandardMaterial({ color: 0xd94b2b }),
     );
-    m.userData = { la, lo };
+    m.userData = { la, lo, id };
     group.add(m);
-    return m;
+    return [m];
   });
   const tunnelPts = TUNNEL.map(([la, lo]) => new THREE.Vector3(f.wx(lo), 0, f.wz(la)));
   const tunnel = new THREE.Mesh(
@@ -51,5 +53,9 @@ export function createInfra(
     } else tunnel.position.y = 1.1 * f.vex;
     group.visible = P.drains;
   }
-  return { update };
+  const parts: InfraPart[] = [
+    ...pumps.map((m) => ({ kind: 'pump' as const, id: (m.userData as { id: number }).id, mesh: m })),
+    { kind: 'tunnel', mesh: tunnel },
+  ];
+  return { update, parts };
 }

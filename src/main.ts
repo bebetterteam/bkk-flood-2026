@@ -20,12 +20,14 @@ import { createTileGrid } from './scene/tileGrid';
 import { addBaseBlock, createStage } from './scene/stage';
 import { createTerrain, type ViewMode } from './scene/terrain';
 import { createWater } from './scene/water';
-import { createWalls } from './scene/walls';
+import { createWallLines } from './scene/wallLines';
 import { createCanals } from './scene/canals';
 import { createBuildings } from './scene/buildings';
 import { createInfra } from './scene/infra';
 import { createRain, createRiverFlow } from './scene/particles';
 import { createLabels } from './scene/labels';
+import { createDistrictLines } from './scene/districts';
+import { LABELS } from './data/places';
 import { CAMS, createCameraTween, type CamView } from './scene/cameraViews';
 import { overviewFrame } from './scene/frame';
 import { createStudyScene, type StudyScene } from './scene/study/studyScene';
@@ -34,7 +36,9 @@ import type { StudyData } from './data/studyArea';
 import { $ } from './ui/dom';
 import { bindPanel, renderPanel } from './ui/panel';
 import { renderResults } from './ui/results';
-import { renderLegend } from './ui/legend';
+import { onLegendPick, renderLegend, setLegendSelection } from './ui/legend';
+import { infraInfo } from './ui/infraInfo';
+import { createHighlighter, type Selection } from './scene/highlight';
 import { createTooltip, type TooltipContext } from './ui/tooltip';
 import { createTopbar, type AppMode, type TileDir } from './ui/topbar';
 import { enableSpacePan } from './ui/spacePan';
@@ -63,7 +67,7 @@ scene.add(ov);
 const terrain = createTerrain(ov, grid);
 const water = createWater(ov, grid);
 addBaseBlock(ov);
-const walls = createWalls(ov, grid);
+const walls = createWallLines(ov, grid);
 const canals = createCanals(ov);
 const rnd = mulberry(42);
 const buildings = createBuildings(ov, grid, rnd);
@@ -87,6 +91,12 @@ let tileIndex: TileIndex | null = null;
 /** เพิ่มทุกครั้งที่ทิ้งฉากพื้นที่ศึกษา — ผลจำลองที่ขอไว้ก่อนสลับแผ่นจะถูกทิ้ง */
 let studyGen = 0;
 let districts: DistrictOutlines | null = null;
+/** เส้นเขต + ชื่อเขตบนภาพรวม (สร้างเมื่อโหลด bangkok-districts.json เสร็จ) */
+let ovDistricts: ReturnType<typeof createDistrictLines> | null = null;
+let ovDistLabels: ReturnType<typeof createLabels> | null = null;
+/** ความสูงเส้นเขตบนภาพรวม: เหนือพื้น (ทรุดตาม hEff) เล็กน้อย */
+const ovDistY = (h: Float32Array) => (la: number, lo: number) =>
+  Math.max(h[overviewFrame.cellAt(la, lo)], 0) * overviewFrame.vex + 0.12;
 // ---- โหมดสมจริง (โหลดเมื่อเลือกครั้งแรก; โค้ดแยก chunk) ----
 let realistic: RealisticScene | null = null;
 let realLoading: Promise<RealisticScene> | null = null;
@@ -110,6 +120,8 @@ function disposeStudy(): void {
   realistic?.dispose();
   realistic = null;
   realLoading = null;
+  studyHighlight?.dispose();
+  studyHighlight = null;
   study?.dispose();
   study = null;
   studyData = null;
@@ -126,6 +138,7 @@ async function ensureStudy(tile: string): Promise<StudyScene> {
   topbar.setText(STUDY.building);
   await new Promise((r) => setTimeout(r, 0)); // ให้ข้อความแสดงก่อนงานหนัก
   const s = createStudyScene(scene, studyLabelBox, g, data, EXAG, districts);
+  studyHighlight = createHighlighter(s.infraParts);
   studyData = data;
   studyTile = tile;
   $('attrib').textContent = STUDY.attribution(g.meta.source.id);
@@ -253,6 +266,7 @@ async function doSetMode(m: AppMode, tile: string): Promise<void> {
     tileGrid?.setVisible(!isStudy);
     topbar.setMode(m, studyTile === STUDY_CONFIG.defaultTile ? STUDY.cams : STUDY.camsOther);
     renderLegend(viewMode, isStudy);
+    select(selection && { kind: selection.kind }); // ชิ้นเดิมอาจไม่มีในฉากใหม่ — คงไว้แค่ชนิด
     // ครั้งแรกที่เปิดพื้นที่ศึกษา (ต่อการเปิดหน้า) ชวนดู "ที่นี่ท่วมไหม?" — ไม่ขอ GPS เองจนกว่าผู้ใช้จะกด
     if (isStudy && !place && !prompted) {
       prompted = true;
@@ -284,6 +298,7 @@ function updateTerrain(): void {
     terrain.update(sim.hEff, viewMode);
     walls.update(sim.hEff, P);
     canals.update(sim.hEff);
+    ovDistricts?.setY(ovDistY(sim.hEff));
   }
 }
 
@@ -330,6 +345,21 @@ void Promise.all([loadTileIndex(), loadDistricts().catch(() => null)])
   .then(([idx, dist]) => {
     tileIndex = idx;
     districts = dist;
+    if (dist) {
+      ovDistricts = createDistrictLines(
+        ov,
+        overviewFrame,
+        dist,
+        ovDistY(mode === 'overview' && sim ? sim.hEff : grid.h0),
+        {
+          size: 0.35,
+          gap: 0.25,
+        },
+      );
+      const box = document.createElement('div');
+      ovLabelBox.append(box);
+      ovDistLabels = createLabels(box, ovDistricts.labels(new Set(LABELS.map(([n]) => n.split(' (')[0]))));
+    }
     const built = idx.tiles.filter((t) => t.built);
     topbar.setTiles(built.map((t) => [t.id, t.name]));
     tileGrid = createTileGrid(
@@ -358,6 +388,11 @@ new ResizeObserver(() =>
     `${$('topbar').getBoundingClientRect().bottom}px`,
   ),
 ).observe($('topbar'));
+// ความสูงของ legend (ขยายเมื่อเปิดการ์ดระบบป้องกัน) — ให้การ์ดตำแหน่งวางเหนือ legend ไม่ทับกัน
+new ResizeObserver(() => {
+  const h = $('legend').offsetHeight;
+  if (h) document.documentElement.style.setProperty('--legend-h', `${h}px`);
+}).observe($('legend'));
 
 // ---- ตำแหน่งของผู้ใช้ / หมุด (MVP 4) — ตำแหน่งอยู่ในหน่วยความจำของหน้านี้เท่านั้น ----
 const marker = createMarker(scene, $('labels'));
@@ -463,6 +498,77 @@ const locate = createLocate($('topbar'), {
 });
 const activeWater = () => (mode === 'study' && study ? study.water : water);
 
+// ---- ระบบป้องกันที่เลือก: กดใน legend (ทั้งชนิด) หรือกดในฉาก (ชิ้นนั้น) → เรืองแสง + การ์ดข้อมูลใน legend ----
+const ovHighlight = createHighlighter([...walls.parts, ...infra.parts]);
+let studyHighlight: ReturnType<typeof createHighlighter> | null = null;
+let selection: Selection = null;
+const activeHighlight = () => (mode === 'study' ? studyHighlight : ovHighlight);
+function refreshInfraInfo(): void {
+  setLegendSelection(
+    selection?.kind ?? null,
+    selection && infraInfo(selection, { P, sim, overviewGrid: grid }),
+  );
+}
+function select(s: Selection): void {
+  if (s?.kind === 'dike' && mode === 'study') s = null; // แผ่นพื้นที่ศึกษาไม่มีคันกั้นน้ำ
+  selection = s;
+  ovHighlight.set(mode === 'overview' ? s : null);
+  studyHighlight?.set(mode === 'study' ? s : null);
+  refreshInfraInfo();
+}
+onLegendPick((k) => select(k && { kind: k }));
+const PICK_OFFSETS: [number, number][] = [[0, 0]];
+for (const r of [3, 6])
+  for (let a = 0; a < 8; a++)
+    PICK_OFFSETS.push([r * Math.cos((a * Math.PI) / 4), r * Math.sin((a * Math.PI) / 4)]);
+{
+  const canvas = renderer.domElement;
+  const rc = new THREE.Raycaster();
+  /** ชิ้นระบบป้องกันใต้เมาส์ (ไม่นับชิ้นที่พื้นบังอยู่) */
+  const infraAt = (x: number, y: number) => {
+    const h = activeHighlight();
+    if (!h || !sim) return null;
+    // เขื่อน/คันบางมากเมื่อซูมออก: ลองรอบจุดคลิกในรัศมี 6 px ด้วย
+    let hit: ReturnType<typeof h.pick> = null;
+    for (const [dx, dy] of PICK_OFFSETS) {
+      rc.setFromCamera(
+        new THREE.Vector2(((x + dx) / innerWidth) * 2 - 1, -((y + dy) / innerHeight) * 2 + 1),
+        camera,
+      );
+      if ((hit = h.pick(rc))) break;
+    }
+    if (!hit) return null;
+    const f = activeFrame(),
+      g = groundPoint(rc.ray, f, sim.hEff);
+    if (g && g.point.distanceTo(rc.ray.origin) < hit.distance - f.cell * 2) return null;
+    return hit.part;
+  };
+  let down: { x: number; y: number } | null = null;
+  canvas.addEventListener('pointerdown', (e) => {
+    down = e.button === 0 && !locate.isPicking() ? { x: e.clientX, y: e.clientY } : null;
+  });
+  canvas.addEventListener('pointerup', (e) => {
+    if (!down || e.button !== 0 || locate.isPicking()) return;
+    const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+    down = null;
+    if (moved > 5) return; // ลาก = หมุน/เลื่อนแผนที่
+    const p = infraAt(e.clientX, e.clientY);
+    if (p) select({ kind: p.kind, id: p.id });
+    else if (selection) select(null);
+  });
+  let hoverAt = 0;
+  canvas.addEventListener('pointermove', (e) => {
+    if (e.buttons || locate.isPicking()) return;
+    const now = performance.now();
+    if (now - hoverAt < 100) return;
+    hoverAt = now;
+    canvas.classList.toggle('infra-hover', !!infraAt(e.clientX, e.clientY));
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && selection && !locate.isPicking()) select(null);
+  });
+}
+
 let lastSubs = -1;
 async function run(reset: boolean): Promise<void> {
   const m = mode,
@@ -486,6 +592,7 @@ async function run(reset: boolean): Promise<void> {
   }
   if (reset) activeWater().reset();
   renderResults(sim, P);
+  if (selection) refreshInfraInfo();
   updatePlaceNow();
 }
 
@@ -533,10 +640,12 @@ function tick(): void {
       rain.tick(dt, P);
       riverFlow.tick(dt, P);
       labels.update(camera, showLabels, sim.hEff, water.cur, P);
+      ovDistLabels?.update(camera, showLabels, sim.hEff, water.cur, P);
       tileGrid?.update(camera);
     }
     tooltip.update(tooltipContext(sim));
     marker.update(dt, activeFrame(), sim.hEff, activeWater().cur, camera);
+    activeHighlight()?.tick(dt);
   }
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
@@ -576,8 +685,7 @@ window.__quality = setQuality;
 if (import.meta.env.DEV)
   (window as unknown as Record<string, unknown>).__three = { renderer, scene, camera, controls };
 window.__cam = (lat, lon, dist, h) => {
-  if (!study) return;
-  const f = study.frame;
+  const f = activeFrame();
   camTween.goToPose([f.wx(lon) - dist * 0.35, h, f.wz(lat) + dist], [f.wx(lon), 0, f.wz(lat)], true);
 };
 tick();

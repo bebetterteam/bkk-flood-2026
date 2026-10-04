@@ -9,7 +9,7 @@
  *    ไฟล์ .json = [{ "eval": "...", "wait": ms, "shot": "ชื่อภาพ" }] (ดู scripts/visual-check.example.json)
  *    ขั้นตอนอื่น: { "key": "Space", "type": "keyDown"|"keyUp" }, { "drag": [x1, y1, x2, y2] }, { "click": [x, y] },
  *      { "geo": [lat, lon, accM] | "deny" | "timeout" }, { "scheme": "light"|"dark" }, { "size": [w, h] }
- *    hook ที่ใช้ได้: __mode('study'|'overview'), __quality('simple'|'real'|'high'), __cam(lat, lon, dist, h), __SIM()
+ *    hook ที่ใช้ได้: __mode('study'|'overview'), __quality('simple'|'real'|'high'), __cam(lat, lon, dist, h) (หน่วยโลกของโหมดปัจจุบัน), __SIM()
  */
 import { writeFileSync } from 'node:fs';
 const [, , url, outDir, steps = 'overview'] = process.argv;

@@ -1,6 +1,6 @@
 /** ฉากโหมด "พื้นที่ศึกษา (ข้อมูลจริง)": พื้นจาก DEM, ตึก OSM (มาตราส่วนจริง), แม่น้ำ, เขื่อน, น้ำ */
 import * as THREE from 'three';
-import { DISTRICTS, LABELS, STUDY_LABELS, type LabelKind } from '../../data/places';
+import { LABELS, STUDY_LABELS } from '../../data/places';
 import type { DistrictOutlines, StudyData } from '../../data/studyArea';
 import type { SimParams } from '../../sim/simulate';
 import type { StudyGrid } from '../../sim/studyGrid';
@@ -14,6 +14,8 @@ import { createRain, createRiverFlow } from '../particles';
 import { createInfra } from '../infra';
 import { buildBuildingTiles, type BuildingArrays } from './buildingGeometry';
 import { disposeObject } from '../dispose';
+import { createDistrictLines } from '../districts';
+import type { InfraPart } from '../highlight';
 
 /** สเกลสีความสูงของพื้นที่ศึกษา [ม., สี] (ช่วงกว้างกว่าภาพรวมเพราะ DEM ยังไม่ได้ปรับ datum) */
 export const STUDY_ELEV: [number, number][] = [
@@ -53,6 +55,8 @@ export interface StudyScene {
   updateWalls(hEff: Float32Array, P: SimParams): void;
   tick(dt: number, P: SimParams): void;
   pickBuilding(ray: THREE.Raycaster): { b: number; point: THREE.Vector3 } | null;
+  /** ระบบป้องกันที่เลือก/ไฮไลท์ได้ */
+  infraParts: InfraPart[];
   /** ชื่อประเภทอาคาร (แท็ก building) จาก index */
   buildingTypeName(i: number): string;
   /** ขนาดพื้นที่ (หน่วยโลก) */
@@ -146,39 +150,17 @@ export function createStudyScene(
   });
 
   // เส้นเขต: เฉพาะช่วงที่อยู่ในแผ่น ยกเหนือพื้น 2 ม. ทรุดตามตึก (แสดงทั้งโหมดเรียบง่ายและสมจริง)
-  const distGroup = new THREE.Group();
-  group.add(distGroup);
-  const distNames = new Set<string>();
-  if (districts) {
-    const pos: number[] = [];
-    const y = (la: number, lo: number) => grid.demMsl[f.cellAt(la, lo)] * f.vex + 2 / STUDY_UNIT_M;
-    for (const d of districts.districts)
-      for (const r of d.rings)
-        for (let k = 0; k < r.length; k++) {
-          const [la0, lo0] = r[k],
-            [la1, lo1] = r[(k + 1) % r.length];
-          if (!f.inBounds(la0, lo0) || !f.inBounds(la1, lo1)) continue;
-          distNames.add(d.name);
-          pos.push(f.wx(lo0), y(la0, lo0), f.wz(la0), f.wx(lo1), y(la1, lo1), f.wz(la1));
-        }
-    const dg = new THREE.BufferGeometry();
-    dg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    distGroup.add(
-      new THREE.LineSegments(
-        dg,
-        new THREE.LineDashedMaterial({
-          color: 0x6d28d9,
-          dashSize: 6,
-          gapSize: 4,
-          transparent: true,
-          opacity: 0.8,
-        }),
-      ).computeLineDistances(),
-    );
-  }
-  const distLabels = DISTRICTS.filter(([n]) => distNames.has('เขต' + n)).map(
-    ([n, la, lo]) => [n, la, lo, 'dist'] as const satisfies readonly [string, number, number, LabelKind],
-  );
+  const dist = districts
+    ? createDistrictLines(
+        group,
+        f,
+        districts,
+        (la, lo) => grid.demMsl[f.cellAt(la, lo)] * f.vex + 2 / STUDY_UNIT_M,
+        { size: 6, gap: 4 },
+      )
+    : null;
+  const distGroup = dist?.group ?? new THREE.Group();
+  const distLabels = dist?.labels() ?? [];
   const labels = createLabels(
     labelBox,
     [...LABELS, ...STUDY_LABELS, ...distLabels].filter(([, la, lo]) => f.inBounds(la, lo)),
@@ -251,6 +233,7 @@ export function createStudyScene(
       flow.tick(dt, P);
     },
     pickBuilding,
+    infraParts: [...walls.parts, ...infra.parts],
     buildingTypeName: (i) => bm.typeNames[i] ?? 'other',
     size: [W, D],
     dispose() {
