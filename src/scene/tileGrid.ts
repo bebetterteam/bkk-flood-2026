@@ -16,7 +16,7 @@ export function createTileGrid(
   const built = tiles.filter((t) => t.built);
   const STEPS = 24;
   /** ความกว้างเส้นกรอบ (หน่วยโลก ≈ 1 กม.) */
-  const BORDER = 0.2;
+  const BORDER = 0.1;
   const lift = 0.25;
   const mat = (opacity: number) =>
     new THREE.MeshBasicMaterial({
