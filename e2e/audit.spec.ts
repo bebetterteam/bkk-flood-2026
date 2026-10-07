@@ -21,7 +21,7 @@ test('audit layout', async ({ browser }) => {
       permissions: ['geolocation'],
     });
     const page = await ctx.newPage();
-    await page.goto('/');
+    await page.goto('/?adaptive=0');
     await page.waitForFunction(() => !!window.__SIM?.(), null, { timeout: 120_000 });
     const overview = await measure(page);
     await page.evaluate(() => window.__mode!('study'));

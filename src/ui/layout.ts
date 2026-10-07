@@ -59,6 +59,9 @@ export function createLayout(panelApi: LayoutPanelApi, onKind?: (k: LayoutKind) 
   let dragH: number | null = null;
   let heights: Record<SheetLevel, number> = { peek: 0, half: 0, full: 0 };
   let topbarBottom = 0;
+  /** ส่วนที่แผงข้าง/การ์ดหมุดบัง (px) — คำนวณใน measure() ไม่อ่าน layout ทุกเฟรม */
+  let occL = 0,
+    occR = 0;
   const setVar = (k: string, v: number) => root.style.setProperty(k, `${Math.round(v)}px`);
   const docked = () => kind !== 'desktop';
 
@@ -112,11 +115,13 @@ export function createLayout(panelApi: LayoutPanelApi, onKind?: (k: LayoutKind) 
       setVar('--sheet-h', 0);
       setVar('--sheet-hidden', 0);
     }
-    const pr = panel.getBoundingClientRect();
+    // offsetLeft/Width ไม่นับ transform: ได้ตำแหน่งปลายทางแม้แผงกำลังเลื่อนเข้า/ออก
+    const panelRight = panel.offsetLeft + panel.offsetWidth;
     const sideOpen = kind !== 'phone' && panelOpen;
-    setVar('--bar-l', sideOpen ? pr.right : 0);
+    occL = sideOpen ? panelRight : 0;
+    setVar('--bar-l', occL);
     const mr = mini.getBoundingClientRect();
-    setVar('--occ-l', kind === 'phone' ? 0 : sideOpen ? pr.right : mr.width ? mr.right : 0);
+    setVar('--occ-l', kind === 'phone' ? 0 : sideOpen ? panelRight : mr.width ? mr.right : 0);
     // ด้านขวาของแถวล่าง: legend (เต็มหรือชิป) และปุ่มเครดิต (จอเล็ก)
     let right = W;
     if (kind !== 'phone') {
@@ -132,7 +137,8 @@ export function createLayout(panelApi: LayoutPanelApi, onKind?: (k: LayoutKind) 
     setVar('--legend-h', legend.offsetHeight);
     setVar('--legend-w', legend.querySelector('.lg-toggle')?.getBoundingClientRect().width ?? 0);
     // ด้านขวาของแถวบน: การ์ดหมุดลอย (เดสก์ท็อป) — ข้อความแจ้งเตือนไม่ทับ
-    setVar('--occ-rt', kind === 'desktop' && !place.hidden ? W - place.getBoundingClientRect().left : 0);
+    occR = kind === 'desktop' && !place.hidden ? W - place.offsetLeft : 0;
+    setVar('--occ-rt', occR);
   }
 
   function applyKind(): void {
@@ -289,8 +295,6 @@ export function createLayout(panelApi: LayoutPanelApi, onKind?: (k: LayoutKind) 
         const occB = Math.min(dragH ?? heights[level], H * 0.6);
         return { x: 0, y: (topbarBottom - occB) / 2 };
       }
-      const occL = panelOpen ? panel.getBoundingClientRect().right : 0;
-      const occR = kind === 'desktop' && !place.hidden ? W - place.getBoundingClientRect().left : 0;
       return { x: (Math.min(occL, W * 0.5) - Math.min(occR, W * 0.4)) / 2, y: 0 };
     },
     /** ขอบล่างของพื้นที่แผนที่ที่มองเห็น (tooltip ไม่ไปอยู่ใต้ sheet) */

@@ -7,10 +7,12 @@
 
 ```bash
 npm run dev       # dev server (Vite)
-npm run build     # typecheck (src, scripts, tests) + build → dist/
+npm run build     # typecheck (src, scripts, tests, e2e) + build → dist/
 npm run preview   # เสิร์ฟ dist/
 npm test          # Vitest (src/, scripts/, tests/ — tests/ ใช้ข้อมูลจริงใน public/)
 npm run lint      # ESLint + Prettier --check
+npm run test:e2e  # Playwright (e2e/): layout ทุก viewport — ใช้ Google Chrome ในเครื่อง, เปิด vite พอร์ต 5199 เอง
+SHOTS=reports/mvp7-after npx playwright test e2e/screens.spec.ts   # ถ่ายภาพ 6 viewport × สว่าง/มืด × 4 สถานะ
 npx prettier --write .   # จัดรูปแบบ
 
 # pipeline ข้อมูลพื้นที่ศึกษา (แบ่งแผ่น) — รันแบบ offline ผลลัพธ์ commit ไว้แล้ว
@@ -53,7 +55,10 @@ src/
                        realisticScene.ts ประกอบ, materials.ts (shader patch: พื้นตาม mask, หน้าต่าง, เส้นจราจร, น้ำ),
                        lighting.ts (Sky + เงาตามกล้อง + env map), weather.ts (ฝนเป็นเส้น + พื้นเปียก),
                        roadGeometry.ts / buildingGeometryReal.ts / landscape.ts = builder แบบ pure (เทสต์ใน Node)
-  ui/                  strings.ts (ข้อความไทยทั้งหมด), panel, results (เกจ/สถิติ/คำอธิบาย), legend, tooltip, topbar
+  ui/                  strings.ts (ข้อความไทยทั้งหมด), panel (หัว/peek/แท็บ/การ์ดย่อ), results (เกจ/สถิติ/ผลหลัก 1 บรรทัด),
+                       legend (ชิป/ขยาย), tooltip (hover หรือแตะ), topbar (+ เมนูเพิ่มเติม), attrib (เครดิต/ปุ่ม ⓘ),
+                       layout.ts (layout manager: breakpoint + CSS variables + sheet/แผงข้าง), icons.ts (ไอคอน SVG ชุดเดียว)
+  scene/adaptive.ts    เพดาน DPR ตามเครื่อง + ลด DPR/อนุภาคตาม FPS (scene/perf.ts = สัดส่วนอนุภาคที่ฉากอ่าน)
 config/study-area.json tiling (ตารางแผ่น), defaultTile, built (แผ่นที่มีข้อมูล), ขนาดช่อง, แหล่ง DEM, verticalOffset, ความสูงเขื่อน, ค่าความสูงตึกเริ่มต้น
 scripts/               pipeline (Node 22 รัน .ts ตรง ๆ, typecheck ด้วย scripts/tsconfig.json)
   fetch-dem.ts         FABDEM: ดึงเฉพาะ tile N13E100 ออกจาก zip 1.7 GB ด้วย HTTP Range (lib/zip-range.ts); --source=copernicus
@@ -74,6 +79,8 @@ public/data/study-area/ ข้อมูลที่ประมวลผลแ�
 reports/tiles/<id>/    รายงาน Phase A ต่อแผ่น
 tests/                 เทสต์ที่ใช้ข้อมูลจริง: study.test.ts (sim บนกริดจริง), buildings.test.ts (geometry) — ใช้แผ่น r3c2
                        tiles.test.ts (ตารางแผ่น/index/กริดทุกแผ่น), tileBudget.test.ts (เพดานสามเหลี่ยม/ต้นไม้ทุกแผ่น)
+e2e/                   Playwright: layout.spec.ts (เทสต์ layout), screens.spec.ts (ถ่ายภาพ), audit.spec.ts, layoutChecks.ts (วัด bounding box)
+reports/mvp7-*         audit, wireframe/tokens (mvp7-design/), ภาพ before/after
 ```
 
 ## แผ่นพื้นที่ศึกษา (ครอบทั้ง กทม.)
@@ -180,7 +187,42 @@ DEM (FABDEM/Copernicus) อ้างอิง geoid EGM2008 แต่แบบ�
   - การ์ดข้อมูลใน legend (`ui/infraInfo.ts`, ข้อความ `INFRA` ใน strings) ค่า "ตอนนี้" อัปเดตตามผลจำลอง
 - คลิกในฉากลองรอบจุดคลิก 6 px (คันบางเมื่อซูมออก) และข้ามชิ้นที่พื้นบัง; คลิกพื้นว่าง/Esc/× = ยกเลิก; ไม่ทำงานระหว่างปักหมุด
 - สลับโหมด/แผ่นคงชนิดที่เลือกไว้ (ชิ้นเฉพาะล้างทิ้ง); พื้นที่ศึกษาไม่มีคันกั้นน้ำ
-- การ์ดตำแหน่ง (`#place`) วางเหนือ legend ตาม `--legend-h` (ResizeObserver); บนจอแคบ legend ซ่อนอยู่ จึงไม่เห็นการ์ดข้อมูล
+- เดสก์ท็อป: การ์ดหมุด (`#place`) วางเหนือ legend ตาม `--legend-h`; จออื่น: legend เป็นชิป เลือกชิ้นในฉากแล้วขยายให้เห็นการ์ดข้อมูลเอง
+
+## Layout / breakpoints / tokens (MVP 7)
+
+- **layout manager เดียว** `src/ui/layout.ts`: ตั้ง `data-layout` บน `<html>` และวัดค่าเป็น CSS variables — overlay ทุกตัวอ้างค่าเหล่านี้
+  ห้ามใส่ offset ตายตัวที่ซ้อนกันเอง (แบบ `calc(46vh + 112px)` เดิม) ถ้าเพิ่ม overlay ใหม่ ให้เพิ่มใน `measure()`/CSS และใน `OVERLAYS` ของ `e2e/layoutChecks.ts`
+  - `--topbar-h` ขอบล่างแถบบน · `--sheet-h` / `--sheet-full` / `--sheet-hidden` bottom sheet · `--bar-l` ขอบซ้ายของแถบบน
+  - `--occ-l` / `--occ-r` ส่วนที่ถูกบังซ้าย/ขวาในแถวล่าง (pill/เครดิตอยู่กึ่งกลางช่องที่เหลือ) · `--occ-rt` การ์ดหมุดลอย · `--legend-h` / `--legend-w`
+  - safe area ใช้ `env(safe-area-inset-*)` ผ่าน `--safe-t/r/b/l` (+ `viewport-fit=cover`), ความสูงใช้ `100dvh` ไม่ใช้ `vh`
+- **breakpoints** (`layoutFor()` มีเทสต์): `land` สูง < 500 และแนวนอน → `phone` กว้าง < 600 → `tablet` ≤ 1024 → `desktop`
+  | layout  | แผง                                                           | แถบบน                  | การ์ดหมุด     | legend       |
+  | ------- | ------------------------------------------------------------- | ---------------------- | ------------- | ------------ |
+  | phone   | bottom sheet 3 ระดับ peek/half/full (ลาก handle หรือปุ่ม ˅ ˄) | โหมด + ตำแหน่ง + ⋯     | แท็บ "ที่นี่" | ชิปขวาบน     |
+  | land    | แผงซ้าย min(300 px, 42vw) มีแท็บ พับได้                       | เหมือน phone           | แท็บ "ที่นี่" | ชิปขวาล่าง   |
+  | tablet  | แผงลอย 320 px มีแท็บ พับได้                                   | เหมือน phone (ป้ายยาว) | แท็บ "ที่นี่" | ชิปขวาล่าง   |
+  | desktop | แผงลอย 360 px เลื่อนยาวทุกหมวด (ไม่มีแท็บ) พับได้             | ทุกปุ่ม (wrap)         | ลอยคอลัมน์ขวา | เต็ม ขวาล่าง |
+- peek ของ sheet = ชื่อ + ชิป preset (เลื่อนแนวนอน) + ผลหลัก 1 บรรทัด (`.kpi`: ระดับเจ้าพระยา/สันเขื่อน + พื้นที่ท่วม) + คำเตือนสั้น
+  `UI.discShort` — **คำเตือนสั้นต้องอยู่ในจอเสมอ** (peek / ท้ายแผง / การ์ดย่อตอนพับแผง `#mini`) ฉบับเต็ม `DISCLAIMER` อยู่ในแท็บ "เรียนรู้"
+- ลาก sheet: เหตุการณ์อยู่บนแผง (ไม่ถึง canvas) + `touch-action` → แผนที่ไม่หมุนตาม; ติดตาม pointermove ที่ window, capture เมื่อเลื่อน > 6 px,
+  snap ระดับที่ใกล้ (ความสูง + ความเร็ว × 180 ms) และกลืน click หลังลาก; เปลี่ยน layout/โหลดหน้าใช้ `data-instant` (ไม่เลื่อนเข้ามา)
+- การ์ดหมุด docked: `layout.ts` ย้าย element `#place` เข้า `#tp-here` (MutationObserver ที่ `hidden`) — `placeCard.ts` ไม่ต้องรู้ layout
+  มือถือ: มีหมุดใหม่ → เปิดแท็บ "ที่นี่" + ยก sheet เป็น half; เริ่มปักหมุด → ลด sheet เป็น peek (แนวนอนพับแผง)
+- **จอสัมผัส**: แตะ 1 ครั้ง (`pointerType !== 'mouse'`, ขยับ ≤ 10 px) = tooltip ค้าง (`tooltip.tap`) แตะ/ลาก/Esc ปิด; ระหว่างปักหมุดไม่แสดง
+  OrbitControls `touches` = 1 นิ้วหมุน / 2 นิ้วซูม+เลื่อน; Space-pan เปิดเฉพาะ `(hover: hover) and (pointer: fine)`
+- **viewOffset**: `main.ts` เรียก `camera.setViewOffset` ทุกเฟรมตาม `layout.viewOffset()` (เลื่อนนุ่ม, reduced-motion = ทันที) ให้จุดกึ่งกลางกล้อง
+  อยู่กลางพื้นที่ที่ไม่ถูกแผง/sheet/การ์ดหมุดบัง — raycast/ป้ายยังใช้พิกัด NDC เต็มจอตามเดิม (view เต็มขนาดจอ แค่เลื่อน)
+- **tokens** (ต้น `style.css`): ระยะ `--sp-1…6` (4 px), มุม `--r-sm/md/lg/xl/pill`, ตัวอักษร 8 ขั้น `--fs-2xs`(11)…`--fs-2xl`(26) + `--fs-input` 16,
+  `--lh` 1.55, เงา `--e-1/2/3`, ชั้น `--z-*`, เวลา `--dur-1/2/3` + `--ease` (reduced-motion = 0), `--hit` 36 (เมาส์) / 44 (`pointer: coarse`)
+  สีทุกคู่ผ่าน WCAG AA ทั้งสองโหมด (`--accent` พื้นปุ่ม, `--accent-ink` ข้อความสีฟ้า) — ตารางใน `reports/mvp7-audit.md`
+- ข้อตกลง: ไม่มี `letter-spacing` กับข้อความไทย, ตัวเลข `tabular-nums`, input/select ≥ 16 px, ปุ่ม/แท็บบนจอสัมผัส ≥ 44 px,
+  transition ของแผง/sheet ใช้ transform เท่านั้น, ไอคอนใช้ `ui/icons.ts` (ห้าม emoji/icon library ใน UI ใหม่) — `e2e/layout.spec.ts` ตรวจทั้งหมดนี้
+- **ประสิทธิภาพ** (`scene/adaptive.ts`): DPR ≤ 1.5 บนจอสัมผัส/≤ 4 คอร์/≤ 4 GB (ไม่งั้น 2), โหมดสมจริงตั้งเพดานผ่าน `pixelCap`;
+  FPS < 28 สองช่วง (ช่วงละ 2 วินาที) → ลดขั้น (DPR ×0.8 → ×0.65 + อนุภาค 50% → ×0.5 + 25%), > 55 นาน 16 วินาที → คืน;
+  ไม่สลับโหมดคุณภาพเอง (ถึงขั้น 2 แจ้ง `UI.slowHint` ครั้งเดียว) · `?adaptive=0` ปิด (เทสต์ภาพ) · `?fps` แสดง FPS ใน pill
+  · หยุด render loop เมื่อ `document.hidden` แล้วเริ่มใหม่ตอน visibilitychange
+- ทดสอบบนเครื่องจริง: `npm run dev -- --host` แล้วเปิด `http://<IP ของเครื่อง>:5173/?fps` บนมือถือ (GPS ต้องใช้ https จึงทดสอบด้วยการปักหมุดแทน)
 
 ## ตำแหน่งของผู้ใช้ "ที่นี่ท่วมไหม?" (MVP 4)
 
@@ -248,5 +290,5 @@ DEM (FABDEM/Copernicus) อ้างอิง geoid EGM2008 แต่แบบ�
 2. MVP 3: การไหลแบบ shallow water บน GPU (ดูข้อเสนอในสรุป MVP 2)
 3. มุมมองภาพตัดขวาง (แม่น้ำ–เขื่อน–ถนน–อุโมงค์)
 4. ไทม์ไลน์รายชั่วโมง (กราฟน้ำขึ้นน้ำลง + ฝน)
-5. รองรับมือถือ/ประสิทธิภาพ
+5. ~~รองรับมือถือ~~ (MVP 7) — ต่อไป: วัด FPS บนมือถือจริงแล้วปรับเกณฑ์ adaptive
 6. แก้ข้อจำกัด non-monotonic ด้านบน

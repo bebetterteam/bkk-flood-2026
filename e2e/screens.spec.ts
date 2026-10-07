@@ -35,9 +35,15 @@ for (const vp of VIEWPORTS) {
         permissions: ['geolocation'],
       });
       const page = await ctx.newPage();
+      page.on('crash', () => console.log(`[${vp.name} ${scheme}] page crashed`));
+      page.on('pageerror', (e) => console.log(`[${vp.name} ${scheme}] ${e.message}`));
+      page.on(
+        'framenavigated',
+        (f) => f === page.mainFrame() && console.log(`[${vp.name} ${scheme}] navigated ${f.url()}`),
+      );
       const shot = (s: string) =>
         page.screenshot({ path: `${OUT}/${vp.name}-${scheme}-${s}.jpg`, quality: 72 });
-      await page.goto('/');
+      await page.goto('/?adaptive=0');
       await waitIdle(page);
       await shot('1-overview');
       await page.evaluate(() => window.__mode!('study').then(() => window.__quality!('real')));
