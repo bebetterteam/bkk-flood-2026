@@ -35,6 +35,8 @@ export async function createRealisticScene(opts: {
   study: StudyScene;
   studyData: StudyData;
   data: RealisticData;
+  /** เพดาน pixel ratio ตามคุณภาพ (null = คืนค่าปกติ) — ให้ adaptive quality คุม ถ้าไม่ระบุตั้งที่ renderer เอง */
+  pixelCap?: (cap: number | null) => void;
 }) {
   const { scene, renderer, study, studyData, data } = opts;
   const f = study.frame;
@@ -275,8 +277,11 @@ export async function createRealisticScene(opts: {
     cars.castShadow = q === 'high';
     refl.setEnabled(q === 'high');
     reflShared.uReflOn.value = q === 'high' ? 1 : 0;
-    renderer.setPixelRatio(q === 'high' ? Math.min(devicePixelRatio, 2) : Math.min(devicePixelRatio, 1.5));
-    if (!on) renderer.setPixelRatio(saved.pixelRatio);
+    if (opts.pixelCap) opts.pixelCap(on ? (q === 'high' ? 2 : 1.5) : null);
+    else {
+      renderer.setPixelRatio(q === 'high' ? Math.min(devicePixelRatio, 2) : Math.min(devicePixelRatio, 1.5));
+      if (!on) renderer.setPixelRatio(saved.pixelRatio);
+    }
   }
 
   /** เรียกเมื่อพื้นเปลี่ยน (การทรุดตัว) */

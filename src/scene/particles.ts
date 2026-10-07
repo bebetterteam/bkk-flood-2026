@@ -3,6 +3,7 @@ import { RIVER } from '../data/geo';
 import { clamp } from '../sim/math';
 import { riverLevel, type SimParams } from '../sim/simulate';
 import { overviewFrame, type Frame } from './frame';
+import { perf } from './perf';
 
 const RMAX = 9000;
 
@@ -28,7 +29,7 @@ export function createRain(
   scene.add(points);
 
   function tick(dt: number, P: SimParams): void {
-    const rc = Math.floor((P.rain / 150) * RMAX);
+    const rc = Math.floor((P.rain / 150) * RMAX * perf.particles);
     geo.setDrawRange(0, rc);
     if (rc) {
       const a = geo.attributes.position.array as Float32Array;
@@ -82,8 +83,10 @@ export function createRiverFlow(
 
   function tick(dt: number, P: SimParams): void {
     const fa = geo.attributes.position.array as Float32Array,
-      sp = (0.004 + (P.flow / 5000) * 0.03) * dt;
-    for (let k = 0; k < FMAX; k++) {
+      sp = (0.004 + (P.flow / 5000) * 0.03) * dt,
+      n = Math.ceil(FMAX * perf.particles);
+    geo.setDrawRange(0, n);
+    for (let k = 0; k < n; k++) {
       flowU[k] = (flowU[k] + sp) % 1;
       const seg = riverPoint(flowU[k], fv);
       const a = rWorld[seg - 1],

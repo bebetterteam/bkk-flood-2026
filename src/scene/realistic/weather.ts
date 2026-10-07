@@ -1,6 +1,7 @@
 /** ฝนแบบเส้นรอบ ๆ จุดที่กล้องมอง (ปริมาณตามความแรงฝน) และค่าความเปียกของพื้น */
 import * as THREE from 'three';
 import { shared } from './materials';
+import { perf } from '../perf';
 
 const MAX = 9000,
   BOX = { w: 260, h: 140, d: 260 };
@@ -23,7 +24,7 @@ export function createWeather(root: THREE.Object3D) {
 
   function tick(dt: number, rain: number, center: THREE.Vector3): void {
     t += dt;
-    const n = Math.floor((rain / 150) * MAX);
+    const n = Math.floor((rain / 150) * MAX * perf.particles);
     geo.setDrawRange(0, n * 2);
     lines.visible = n > 0;
     // ความเปียกค่อย ๆ เปลี่ยน
