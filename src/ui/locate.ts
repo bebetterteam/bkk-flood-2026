@@ -2,6 +2,7 @@
  * รับตำแหน่ง 2 ทาง: GPS ของเครื่อง (Geolocation API) หรือคลิกปักหมุดบนแผนที่
  * ตำแหน่งไม่ถูกส่งหรือบันทึกที่ไหน — ส่งต่อให้ callback ในหน้านี้เท่านั้น
  */
+import { icon } from './icons';
 import { PLACE } from './strings';
 
 export interface PickedLocation {
@@ -18,17 +19,18 @@ export interface LocateOptions {
   onLocation: (p: PickedLocation) => void;
   /** แสดงข้อความสถานะ/ข้อผิดพลาด (null = ล้าง) */
   onMessage: (msg: string | null) => void;
+  /** เริ่ม/เลิกโหมดปักหมุด (เช่น ย่อ sheet ให้เห็นแผนที่) */
+  onPicking?: (on: boolean) => void;
 }
 
-export function createLocate(bar: HTMLElement, o: LocateOptions) {
-  const box = document.createElement('span');
-  box.className = 'seg';
-  box.innerHTML =
-    `<button id="btn-locate" type="button">${PLACE.btnLocate}</button>` +
-    `<button id="btn-pin" type="button">${PLACE.btnPin}</button>`;
-  bar.prepend(box);
-  const locateBtn = box.querySelector<HTMLButtonElement>('#btn-locate')!;
-  const pinBtn = box.querySelector<HTMLButtonElement>('#btn-pin')!;
+/** slots = ที่วางปุ่ม "ตำแหน่งของฉัน" และ "ปักหมุด" (แถบบน/เมนูเพิ่มเติม) */
+export function createLocate(slots: { locate: HTMLElement; pin: HTMLElement }, o: LocateOptions) {
+  slots.locate.innerHTML = `<button id="btn-locate" type="button" aria-label="${PLACE.btnLocate}">${icon('locate')}<span class="t-long">${PLACE.btnLocate}</span></button>`;
+  slots.pin.innerHTML = `<button id="btn-pin" type="button" aria-pressed="false">${icon('pin')}<span>${PLACE.btnPin}</span></button>`;
+  const locateBtn = slots.locate.querySelector<HTMLButtonElement>('#btn-locate')!;
+  const pinBtn = slots.pin.querySelector<HTMLButtonElement>('#btn-pin')!;
+  /** จอสัมผัส: "แตะ" ไม่มีปุ่ม Esc */
+  const touch = matchMedia('(hover: none)');
 
   // ---- GPS ----
   function locate(): void {
@@ -66,10 +68,14 @@ export function createLocate(bar: HTMLElement, o: LocateOptions) {
   let picking = false;
   let down: { x: number; y: number } | null = null;
   function setPicking(on: boolean): void {
+    const was = picking;
     picking = on;
     pinBtn.classList.toggle('on', on);
+    pinBtn.setAttribute('aria-pressed', String(on));
     o.canvas.classList.toggle('picking', on);
-    o.onMessage(on ? PLACE.pickHint : null);
+    if (on) o.onMessage(touch.matches ? PLACE.pickHintTouch : PLACE.pickHint);
+    else if (was) o.onMessage(null);
+    if (on !== was) o.onPicking?.(on);
   }
   o.canvas.addEventListener('pointerdown', (e) => {
     down = picking && e.button === 0 ? { x: e.clientX, y: e.clientY } : null;

@@ -2,12 +2,13 @@
 <html lang="th">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Bangkok Flood 2026 - BeBetter</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#1e5fd8" />
+    <meta name="theme-color" content="#dfe8ee" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e161d" media="(prefers-color-scheme: dark)" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -18,13 +19,13 @@
   <body>
     <div id="stage"></div>
     <div id="labels"></div>
-    <div id="tip"></div>
+    <div id="tip" role="tooltip"></div>
     <aside id="panel"></aside>
     <div id="topbar"></div>
     <div id="legend"></div>
     <div id="clock"></div>
     <div id="attrib" style="display: none"></div>
-    <div id="locmsg" hidden></div>
+    <div id="locmsg" role="status" hidden></div>
     <aside id="place" hidden aria-live="polite"></aside>
     <script type="module" src="/src/main.ts"></script>
   </body>

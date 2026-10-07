@@ -5,6 +5,7 @@ import { FLOOD_DEPTH, type CellReading, type ProbeResult } from '../sim/probe';
 import { PRESETS } from '../sim/presets';
 import type { SimParams } from '../sim/simulate';
 import type { PickedLocation } from './locate';
+import { icon } from './icons';
 import { CAUSES, PLACE, SLIDERS, type SliderKey } from './strings';
 
 /** ความลึกเต็มแถบ (ม.) */
@@ -126,7 +127,7 @@ export function createPlaceCard(
   function renderPrompt(a: PromptActions): void {
     root.hidden = false;
     root.innerHTML = `
-      <div class="head"><b>${PLACE.title}</b><button class="x" type="button" aria-label="${PLACE.close}">×</button></div>
+      <div class="head"><h2>${PLACE.title}</h2><button class="x icon-btn" type="button" aria-label="${PLACE.close}">${icon('close')}</button></div>
       <p class="intro">${PLACE.promptText}</p>
       <div class="acts"><button type="button" class="primary gps">${PLACE.promptGps}</button><button type="button" class="pin">${PLACE.promptPin}</button><button type="button" class="later">${PLACE.promptLater}</button></div>
       <p class="fine">${PLACE.privacy}</p>`;
@@ -168,7 +169,7 @@ export function createPlaceCard(
            <p>${fine ? PLACE.resStudy : PLACE.resOverview}</p></div>`
       : '';
     const locHtml = `<div class="loc">
-        <div class="nm">📍 ${PLACE.near(nearestDistrict(loc.lat, loc.lon))}</div>
+        <div class="nm">${icon('pin')}${PLACE.near(nearestDistrict(loc.lat, loc.lon))}</div>
         <div class="pills"><span class="pill co">${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}</span>${src}</div>
         ${res}
       </div>`;
@@ -198,7 +199,7 @@ export function createPlaceCard(
           : PLACE.summaryNone(probe.rows.length)
         : '';
     root.innerHTML = `
-      <div class="head"><b>${PLACE.title}</b><button class="x" type="button" aria-label="${PLACE.close}">×</button></div>
+      <div class="head"><h2>${PLACE.title}</h2><button class="x icon-btn" type="button" aria-label="${PLACE.close}">${icon('close')}</button></div>
       ${locHtml}
       ${special ? `<div class="note">${special}</div>` : ''}
       ${nowHtml}

@@ -10,12 +10,27 @@ const BANK = 1.8;
 export function renderResults(s: SimResult, P: SimParams): void {
   $('g-river').textContent = s.riverMid.toFixed(2) + T.mMsl;
   $('g-fill').style.width = clamp((s.riverMid / 4) * 100, 0, 100) + '%';
+  const wl = P.walls ? s.coreWall : BANK;
   $('g-fill').style.background =
     (P.walls && s.riverMid > s.coreWall) || (!P.walls && s.riverMid > BANK) ? 'var(--warn)' : 'var(--river)';
-  const wl = P.walls ? s.coreWall : BANK;
   $('g-wall').style.left = clamp((wl / 4) * 100, 0, 100) + '%';
   $('g-walltxt').textContent = (P.walls ? T.wallCrest : T.bank) + wl.toFixed(2) + T.m;
   $('s-area').textContent = Math.round(s.area).toLocaleString() + T.km2;
+  // ผลหลัก 1 บรรทัด (peek ของ sheet + การ์ดตอนพับแผง)
+  const over = (P.walls && s.riverMid > s.coreWall) || (!P.walls && s.riverMid > BANK);
+  const all = (cls: string, f: (el: HTMLElement) => void) =>
+    document.querySelectorAll<HTMLElement>('.' + cls).forEach(f);
+  all('k-river', (el) => {
+    el.textContent = s.riverMid.toFixed(2);
+    el.classList.toggle('bad', over);
+  });
+  all('k-wall', (el) => (el.textContent = (P.walls ? T.wallCrest : T.bank) + wl.toFixed(2) + T.m));
+  all('k-area', (el) => (el.textContent = Math.round(s.area).toLocaleString()));
+  all('k-fill', (el) => {
+    el.style.width = clamp((s.riverMid / 4) * 100, 0, 100) + '%';
+    el.style.background = over ? 'var(--warn)' : 'var(--river)';
+  });
+  all('k-mark', (el) => (el.style.left = clamp((wl / 4) * 100, 0, 100) + '%'));
   $('s-deep').textContent = Math.round(s.deep).toLocaleString() + T.km2;
   const mx = Math.max(1, ...s.by);
   $('causes').innerHTML = CAUSES.map(

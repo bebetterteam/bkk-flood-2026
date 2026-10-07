@@ -44,6 +44,8 @@ export function createStage(container: HTMLElement): Stage {
   controls.maxPolarAngle = 1.38;
   controls.minDistance = 4;
   controls.maxDistance = 130;
+  // จอสัมผัส: 1 นิ้ว = หมุน, 2 นิ้ว = ซูม + เลื่อน
+  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 
   const hemi = new THREE.HemisphereLight(0xeef6ff, 0x8a7d63, 1.1);
   scene.add(hemi);

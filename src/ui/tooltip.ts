@@ -1,4 +1,7 @@
-/** tooltip เมื่อชี้เมาส์บนแผนที่: เขต ความสูงพื้น ความลึกน้ำ และสาเหตุ */
+/**
+ * ข้อมูลจุดบนแผนที่: เขต ความสูงพื้น ความลึกน้ำ และสาเหตุ
+ * เมาส์ (hover) = ตามตำแหน่งเมาส์; จอสัมผัส (hover: none) = แตะ 1 ครั้งแล้วค้างไว้ แตะที่อื่น/ลาก/Esc เพื่อปิด
+ */
 import * as THREE from 'three';
 import { nearestDistrict } from '../data/places';
 import { groundPoint } from '../scene/pick';
@@ -19,19 +22,41 @@ export interface TooltipContext {
   pick?: (ray: THREE.Raycaster) => { html: string; point: THREE.Vector3 } | null;
 }
 
-export function createTooltip(tip: HTMLElement, canvas: HTMLElement, camera: THREE.Camera) {
+/** จุดบนจอที่ต้องการดูข้อมูล (PointerEvent หรือจุดที่แตะ) */
+interface At {
+  clientX: number;
+  clientY: number;
+}
+
+export function createTooltip(
+  tip: HTMLElement,
+  canvas: HTMLElement,
+  camera: THREE.Camera,
+  /** ขอบล่างของแผนที่ที่มองเห็น (เหนือ bottom sheet) */
+  mapBottom: () => number = () => innerHeight,
+) {
   const ray = new THREE.Raycaster(),
     mouse = new THREE.Vector2();
-  let hoverEv: PointerEvent | null = null;
-  let lastEv: PointerEvent | null = null,
+  let hoverEv: At | null = null;
+  let lastEv: At | null = null,
     lastAt = 0;
+  /** แตะค้างไว้ (จอสัมผัส): ไม่หายเมื่อไม่มี pointermove */
+  let tapped = false;
+  const hide = () => {
+    hoverEv = null;
+    tapped = false;
+    tip.style.display = 'none';
+  };
   canvas.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch' || tapped) return;
     hoverEv = e;
   });
-  canvas.addEventListener('pointerleave', () => {
-    hoverEv = null;
-    tip.style.display = 'none';
+  canvas.addEventListener('pointerleave', (e) => {
+    if (e.pointerType !== 'touch' && !tapped) hide();
   });
+  // ลาก/หมุนแผนที่ = ปิดข้อมูลที่แตะไว้
+  canvas.addEventListener('pointerdown', () => tapped && hide());
+  window.addEventListener('keydown', (e) => e.key === 'Escape' && tapped && hide());
 
   function update(ctx: TooltipContext): void {
     if (!hoverEv) return;
@@ -73,10 +98,27 @@ export function createTooltip(tip: HTMLElement, canvas: HTMLElement, camera: THR
     }
     if (picked)
       html = picked.html + '<hr style="border:0;border-top:1px solid var(--line);margin:5px 0">' + html;
-    tip.innerHTML = html;
+    if (tip.innerHTML !== html) tip.innerHTML = html;
     tip.style.display = 'block';
-    tip.style.left = Math.min(e.clientX + 14, innerWidth - 220) + 'px';
-    tip.style.top = e.clientY + 14 + 'px';
+    // อยู่ในจอและเหนือ sheet: ล้นขวา → ไปซ้ายของจุด, ล้นล่าง → ไปเหนือจุด
+    const w = tip.offsetWidth,
+      h = tip.offsetHeight,
+      pad = 8;
+    let x = e.clientX + 14,
+      y = e.clientY + 14;
+    if (x + w > innerWidth - pad) x = Math.max(pad, e.clientX - 14 - w);
+    if (y + h > mapBottom() - pad) y = Math.max(pad, e.clientY - 14 - h);
+    tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
   }
-  return { update };
+  return {
+    update,
+    /** แตะ 1 ครั้งบนจอสัมผัส: แสดงข้อมูลจุดนั้นค้างไว้ */
+    tap(x: number, y: number): void {
+      hoverEv = { clientX: x, clientY: y };
+      lastEv = null;
+      lastAt = 0;
+      tapped = true;
+    },
+    hide,
+  };
 }

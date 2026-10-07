@@ -36,7 +36,7 @@ import type { StudyData } from './data/studyArea';
 import { $ } from './ui/dom';
 import { bindPanel, renderPanel } from './ui/panel';
 import { renderResults } from './ui/results';
-import { onLegendPick, renderLegend, setLegendSelection } from './ui/legend';
+import { onLegendPick, renderLegend, setLegendOpen, setLegendSelection } from './ui/legend';
 import { infraInfo } from './ui/infraInfo';
 import { createHighlighter, type Selection } from './scene/highlight';
 import { createTooltip, type TooltipContext } from './ui/tooltip';
@@ -48,8 +48,11 @@ import { fetchForecast } from './data/forecast';
 import { createMarker } from './scene/marker';
 import { groundPoint } from './scene/pick';
 import { cellOf, readCell } from './sim/probe';
-import { PLACE } from './ui/strings';
-import { STUDY } from './ui/strings';
+import { PLACE, STUDY, UI } from './ui/strings';
+import { createLayout } from './ui/layout';
+import { icon } from './ui/icons';
+import { createAttrib } from './ui/attrib';
+import { createAdaptive, lowTierDevice } from './scene/adaptive';
 
 const grid = buildGrid();
 const P: SimParams = { ...DEFAULT_PARAMS };
@@ -79,7 +82,17 @@ const ovLabelBox = document.createElement('div'),
 $('labels').append(ovLabelBox, studyLabelBox);
 const labels = createLabels(ovLabelBox);
 const camTween = createCameraTween(camera, controls);
-enableSpacePan(controls, renderer.domElement);
+// กด Space ค้างเพื่อเลื่อนแผนที่: เฉพาะเครื่องที่มีเมาส์ (เดสก์ท็อป)
+if (matchMedia('(hover: hover) and (pointer: fine)').matches) enableSpacePan(controls, renderer.domElement);
+// ปรับความละเอียด/อนุภาคตาม FPS (ปิดด้วย ?adaptive=0, แสดง FPS ด้วย ?fps)
+const query = new URLSearchParams(location.search);
+const fpsBox = query.has('fps') ? document.createElement('span') : null;
+const adaptive = createAdaptive(renderer, {
+  lowTier: lowTierDevice(),
+  enabled: query.get('adaptive') !== '0',
+  onSlow: () => showMsg(UI.slowHint),
+  onFps: (fps, step) => fpsBox && (fpsBox.textContent = UI.fps(fps, step)),
+});
 
 // ---- ฉากพื้นที่ศึกษา (โหลดทีละแผ่นเมื่อเลือก; สลับแผ่น = ทิ้งฉากเดิมแล้วสร้างใหม่) ----
 let study: StudyScene | null = null;
@@ -141,7 +154,7 @@ async function ensureStudy(tile: string): Promise<StudyScene> {
   studyHighlight = createHighlighter(s.infraParts);
   studyData = data;
   studyTile = tile;
-  $('attrib').textContent = STUDY.attribution(g.meta.source.id);
+  attrib.setText(STUDY.attribution(g.meta.source.id));
   console.info(`[study] โหลดแผ่น ${tile} เสร็จใน ${(performance.now() - t0).toFixed(0)} ms`);
   return (study = s);
 }
@@ -165,6 +178,7 @@ async function ensureRealistic(): Promise<RealisticScene> {
       study: study!,
       studyData: studyData!,
       data,
+      pixelCap: (c) => adaptive.setCap(c),
     });
     console.info(`[realistic] โหลดเสร็จใน ${(performance.now() - t0).toFixed(0)} ms`);
     return (realistic = r);
@@ -194,9 +208,7 @@ function applyQuality(): void {
   realistic?.setQuality(q);
   realistic?.update();
   const real = q !== 'simple';
-  if (study)
-    $('attrib').textContent =
-      STUDY.attribution(study.grid.meta.source.id) + (real ? STUDY.textureCredit : '');
+  if (study) attrib.setText(STUDY.attribution(study.grid.meta.source.id) + (real ? STUDY.textureCredit : ''));
   const note = $('study-note');
   if (study && studyData) {
     const bm = studyData.buildings.meta;
@@ -314,7 +326,11 @@ const topbar = createTopbar($('topbar'), $('clock'), {
   onLabels: (s) => {
     showLabels = s;
   },
-  onCam: (v) => (mode === 'study' ? camTween.goToPose(...studyCam(v)) : camTween.goTo(v as CamView)),
+  onCam: (v) => {
+    if (layout.kind === 'phone') layout.setLevel('peek'); // ให้เห็นภาพมุมใหม่
+    if (mode === 'study') camTween.goToPose(...studyCam(v));
+    else camTween.goTo(v as CamView);
+  },
   onReplay: () => activeWater().reset(),
   onMode: (m) => {
     showMsg(null);
@@ -380,19 +396,8 @@ void Promise.all([loadTileIndex(), loadDistricts().catch(() => null)])
     } else topbar.setTile(wantTile, {}, Object.fromEntries(idx.tiles.map((t) => [t.id, t.name])));
   })
   .catch((e) => console.warn('[tiles]', (e as Error).message));
-const tooltip = createTooltip($('tip'), renderer.domElement, camera);
-// ความสูงจริงของแถบปุ่มด้านบน (บนจอแคบปุ่มขึ้นหลายแถว) — ใช้จำกัดความสูงการ์ดตำแหน่งไม่ให้ทับ
-new ResizeObserver(() =>
-  document.documentElement.style.setProperty(
-    '--topbar-bottom',
-    `${$('topbar').getBoundingClientRect().bottom}px`,
-  ),
-).observe($('topbar'));
-// ความสูงของ legend (ขยายเมื่อเปิดการ์ดระบบป้องกัน) — ให้การ์ดตำแหน่งวางเหนือ legend ไม่ทับกัน
-new ResizeObserver(() => {
-  const h = $('legend').offsetHeight;
-  if (h) document.documentElement.style.setProperty('--legend-h', `${h}px`);
-}).observe($('legend'));
+const attrib = createAttrib($('attrib'));
+const tooltip = createTooltip($('tip'), renderer.domElement, camera, () => layout.mapBottom());
 
 // ---- ตำแหน่งของผู้ใช้ / หมุด (MVP 4) — ตำแหน่งอยู่ในหน่วยความจำของหน้านี้เท่านั้น ----
 const marker = createMarker(scene, $('labels'));
@@ -402,8 +407,8 @@ const locMsg = $('locmsg');
 const locMsgText = document.createElement('span');
 const locMsgClose = document.createElement('button');
 locMsgClose.type = 'button';
-locMsgClose.className = 'x';
-locMsgClose.textContent = '×';
+locMsgClose.className = 'x icon-btn';
+locMsgClose.innerHTML = icon('close');
 locMsgClose.setAttribute('aria-label', PLACE.close);
 locMsgClose.addEventListener('click', () => showMsg(null));
 locMsg.append(locMsgText, locMsgClose);
@@ -484,19 +489,31 @@ async function goToLocation(p: PickedLocation): Promise<void> {
   card.setProbe(res);
   if (res?.kind === 0) void loadForecast(p);
 }
-const locate = createLocate($('topbar'), {
-  canvas: renderer.domElement,
-  pickAt: (x, y) => {
-    if (!sim) return null;
-    const ray = new THREE.Raycaster();
-    ray.setFromCamera(new THREE.Vector2((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
-    const hit = groundPoint(ray.ray, activeFrame(), sim.hEff);
-    return hit && { lat: hit.lat, lon: hit.lon };
+const locate = createLocate(
+  { locate: topbar.slot('locate'), pin: topbar.slot('pin') },
+  {
+    canvas: renderer.domElement,
+    onPicking: (on) => {
+      if (!on) return;
+      topbar.closeMenu();
+      if (layout.kind === 'phone')
+        layout.setLevel('peek'); // ให้เห็นแผนที่ตอนปักหมุด
+      else if (layout.kind === 'land') layout.setPanelOpen(false);
+    },
+    pickAt: (x, y) => {
+      if (!sim) return null;
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(new THREE.Vector2((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
+      const hit = groundPoint(ray.ray, activeFrame(), sim.hEff);
+      return hit && { lat: hit.lat, lon: hit.lon };
+    },
+    onLocation: (p) => void goToLocation(p),
+    onMessage: showMsg,
   },
-  onLocation: (p) => void goToLocation(p),
-  onMessage: showMsg,
-});
+);
 const activeWater = () => (mode === 'study' && study ? study.water : water);
+// ---- layout manager (MVP 7): breakpoint, sheet/แผงข้าง, CSS variables ----
+const layout = createLayout(panel);
 
 // ---- ระบบป้องกันที่เลือก: กดใน legend (ทั้งชนิด) หรือกดในฉาก (ชิ้นนั้น) → เรืองแสง + การ์ดข้อมูลใน legend ----
 const ovHighlight = createHighlighter([...walls.parts, ...infra.parts]);
@@ -551,10 +568,17 @@ for (const r of [3, 6])
     if (!down || e.button !== 0 || locate.isPicking()) return;
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
     down = null;
-    if (moved > 5) return; // ลาก = หมุน/เลื่อนแผนที่
+    if (moved > (e.pointerType === 'mouse' ? 5 : 10)) return; // ลาก = หมุน/เลื่อนแผนที่
     const p = infraAt(e.clientX, e.clientY);
-    if (p) select({ kind: p.kind, id: p.id });
-    else if (selection) select(null);
+    if (p) {
+      tooltip.hide();
+      select({ kind: p.kind, id: p.id });
+      return;
+    }
+    if (selection) select(null);
+    setLegendOpen(false);
+    // จอสัมผัสไม่มี hover: แตะ 1 ครั้ง = ดูข้อมูลจุดนั้น
+    if (e.pointerType !== 'mouse') tooltip.tap(e.clientX, e.clientY);
   });
   let hoverAt = 0;
   canvas.addEventListener('pointermove', (e) => {
@@ -625,8 +649,38 @@ function tooltipContext(s: SimResult): TooltipContext {
 
 // ---- loop ----
 const clock = new THREE.Clock();
+/** เลื่อนจุดกึ่งกลางภาพให้อยู่กลางพื้นที่ที่ไม่ถูกแผง/sheet บัง (ค่อย ๆ เลื่อนตาม) */
+const viewOff = { x: 0, y: 0 };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+function updateViewOffset(dt: number): void {
+  const t = layout.viewOffset();
+  const k = reduceMotion.matches ? 1 : 1 - Math.exp(-dt * 10);
+  const nx = viewOff.x + (t.x - viewOff.x) * k,
+    ny = viewOff.y + (t.y - viewOff.y) * k;
+  const W = innerWidth,
+    H = innerHeight;
+  const v = camera.view;
+  const same =
+    Math.abs(nx - viewOff.x) < 0.25 &&
+    Math.abs(ny - viewOff.y) < 0.25 &&
+    (!v || (v.fullWidth === W && v.fullHeight === H));
+  if (same && (v || (Math.abs(nx) < 0.5 && Math.abs(ny) < 0.5))) return;
+  viewOff.x = nx;
+  viewOff.y = ny;
+  if (Math.abs(nx) < 0.5 && Math.abs(ny) < 0.5 && Math.abs(t.x) < 0.5 && Math.abs(t.y) < 0.5) {
+    if (v) camera.clearViewOffset();
+  } else camera.setViewOffset(W, H, -nx, -ny, W, H);
+}
+let running = true;
 function tick(): void {
-  const dt = Math.min(clock.getDelta(), 0.05);
+  if (document.hidden) {
+    running = false; // หยุด render เมื่อแท็บถูกซ่อน (visibilitychange จะเริ่มใหม่)
+    return;
+  }
+  const raw = clock.getDelta();
+  const dt = Math.min(raw, 0.05);
+  adaptive.frame(raw);
+  updateViewOffset(dt);
   camTween.tick(dt);
   controls.update();
   if (sim) {
@@ -684,6 +738,17 @@ window.__quality = setQuality;
 // dev เท่านั้น: เข้าถึง three.js สำหรับดีบัก (ไม่อยู่ใน build จริง)
 if (import.meta.env.DEV)
   (window as unknown as Record<string, unknown>).__three = { renderer, scene, camera, controls };
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || running) return;
+  running = true;
+  clock.getDelta(); // ไม่นับช่วงที่ซ่อน
+  adaptive.reset();
+  requestAnimationFrame(tick);
+});
+if (fpsBox) {
+  fpsBox.id = 'fps';
+  $('clock').append(fpsBox);
+}
 window.__cam = (lat, lon, dist, h) => {
   const f = activeFrame();
   camTween.goToPose([f.wx(lon) - dist * 0.35, h, f.wz(lat) + dist], [f.wx(lon), 0, f.wz(lat)], true);

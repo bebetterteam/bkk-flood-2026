@@ -1,7 +1,8 @@
 import type { ViewMode } from '../scene/terrain';
 import { ELEV } from '../scene/terrain';
 import { $ } from './dom';
-import { INFRA, LEGEND, STUDY } from './strings';
+import { INFRA, LEGEND, STUDY, UI } from './strings';
+import { icon as uiIcon } from './icons';
 import type { InfraKind } from '../scene/highlight';
 import { STUDY_ELEV } from '../scene/study/studyScene';
 
@@ -9,14 +10,18 @@ const esc = (s: string) => s.replace(/</g, '&lt;');
 const hex = (c: number) => '#' + c.toString(16).padStart(6, '0');
 
 /** แถบสี: stops = [ค่า, สี] เรียงจากน้อยไปมาก, ticks = [ข้อความ, ค่า] วางตรงตำแหน่งค่าจริงบนแถบ */
+function gradient(stops: [number, number][]): string {
+  const lo = stops[0][0],
+    hi = stops[stops.length - 1][0];
+  return `linear-gradient(90deg,${stops.map(([v, c]) => `${hex(c)} ${(((v - lo) / (hi - lo)) * 100).toFixed(1)}%`).join(',')})`;
+}
 function ramp(title: string, stops: [number, number][], ticks: [string, number][]): string {
   const lo = stops[0][0],
     hi = stops[stops.length - 1][0];
   const pct = (v: number) => ((v - lo) / (hi - lo)) * 100;
-  const grad = stops.map(([v, c]) => `${hex(c)} ${pct(v).toFixed(1)}%`).join(',');
   const tk = ticks.map(([t, v]) => `<span style="left:${pct(v).toFixed(1)}%">${esc(t)}</span>`).join('');
   return `<div class="lg-title">${title}</div>
-    <div class="ramp" style="background:linear-gradient(90deg,${grad})"></div>
+    <div class="ramp" style="background:${gradient(stops)}"></div>
     <div class="ticks">${tk}</div>`;
 }
 
@@ -42,6 +47,8 @@ let info: { title: string; html: string } | null = null;
 let last: [ViewMode, boolean] = ['real', false];
 let onPick: (k: InfraKind | null) => void = () => {};
 let bound = false;
+/** จอเล็ก: legend ย่อเป็นชิป กดแล้วขยาย (เดสก์ท็อปแสดงเต็มเสมอ ปุ่มชิปซ่อนด้วย CSS) */
+let open = false;
 
 /** กดรายการ (k) หรือปิดการ์ด (null) */
 export function onLegendPick(cb: (k: InfraKind | null) => void): void {
@@ -50,16 +57,28 @@ export function onLegendPick(cb: (k: InfraKind | null) => void): void {
 
 /** ไฮไลท์รายการ + แสดงการ์ดข้อมูล (null = ไม่ได้เลือก) */
 export function setLegendSelection(k: InfraKind | null, card: { title: string; html: string } | null): void {
+  if (k && k !== sel) open = true; // เลือกชิ้นใหม่ (เช่นแตะโมเดลในฉาก) → ขยายให้เห็นการ์ด
   sel = k;
   info = k ? card : null;
+  renderLegend(...last);
+}
+
+/** ขยาย/ย่อ legend (จอเล็ก) */
+export function setLegendOpen(o: boolean): void {
+  if (o === open) return;
+  open = o;
   renderLegend(...last);
 }
 
 function bind(): void {
   if (bound) return;
   bound = true;
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && open && !sel) setLegendOpen(false);
+  });
   $('legend').addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
+    if (t.closest('.lg-toggle')) return setLegendOpen(!open);
     if (t.closest('.ii-close')) return onPick(null);
     const b = t.closest<HTMLElement>('[data-kind]');
     if (b) onPick(sel === b.dataset.kind ? null : (b.dataset.kind as InfraKind));
@@ -69,23 +88,23 @@ function bind(): void {
 export function renderLegend(viewMode: ViewMode, study = false): void {
   last = [viewMode, study];
   bind();
-  let top: string;
+  let top: string, stops: [number, number][];
   if (viewMode === 'elev' && study)
     top = ramp(
       STUDY.legendElevTitle,
-      STUDY_ELEV,
+      (stops = STUDY_ELEV),
       STUDY.legendElevTicks.map((t, k) => [t, STUDY_ELEV_TICKS[k]]),
     );
   else if (viewMode === 'elev')
     top = ramp(
       LEGEND.elevTitle,
-      ELEV.map(([h, c]) => [h, c.getHex()]),
+      (stops = ELEV.map(([h, c]) => [h, c.getHex()])),
       LEGEND.elevTicks.map((t, k) => [t, ELEV_TICKS[k]]),
     );
   else
     top = ramp(
       LEGEND.depthTitle,
-      DEPTH_STOPS,
+      (stops = DEPTH_STOPS),
       LEGEND.depthTicks.map((t, k) => [t, DEPTH_TICKS[k]]),
     );
   const items = [
@@ -97,11 +116,16 @@ export function renderLegend(viewMode: ViewMode, study = false): void {
   ].join('');
   const card =
     sel && info
-      ? `<div class="lg-info"><div class="ii-head">${icon(sel)}<b>${info.title}</b><button type="button" class="ii-close" aria-label="${INFRA.close}">×</button></div>${info.html}</div>`
+      ? `<div class="lg-info"><div class="ii-head">${icon(sel)}<b>${info.title}</b><button type="button" class="icon-btn ii-close" aria-label="${INFRA.close}">${uiIcon('close')}</button></div>${info.html}</div>`
       : '';
-  $('legend').innerHTML =
-    `${card}${top}<div class="lg-title lg-sub">${LEGEND.protection}</div><div class="lg-items">${items}</div>` +
-    (sel ? '' : `<div class="lg-hint">${INFRA.hint}</div>`);
+  const el = $('legend');
+  el.classList.toggle('open', open);
+  el.innerHTML =
+    `<button type="button" class="lg-toggle" aria-expanded="${open}" aria-controls="lg-body" aria-label="${UI.legendOpen}">` +
+    `<span class="lg-swatch" style="background:${gradient(stops)}" aria-hidden="true"></span><span class="lg-chip-t">${UI.legendChip}</span>${uiIcon('down', 'lg-chev')}</button>` +
+    `<div class="lg-body" id="lg-body">${card}${top}<div class="lg-title lg-sub">${LEGEND.protection}</div><div class="lg-items">${items}</div>` +
+    (sel ? '' : `<div class="lg-hint">${INFRA.hint}</div>`) +
+    `</div>`;
 }
 
 /** สีน้ำตามความลึก (ม.) — ตรงกับ scene/water.ts */
