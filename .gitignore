@@ -7,3 +7,5 @@ coverage
 *.log
 .vitest
 data/raw/
+test-results
+playwright-report

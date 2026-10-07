@@ -13,13 +13,15 @@
     "data:build": "node scripts/data.ts --stage=build",
     "data:report": "node scripts/data.ts --stage=report",
     "data:forecast": "node scripts/build-forecast-normals.ts",
-    "data": "node scripts/data.ts"
+    "data": "node scripts/data.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "three": "^0.160.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.3",
     "@types/three": "^0.160.0",
     "eslint": "^10.11.0",

@@ -1,0 +1,145 @@
+/* MVP 7 — design tokens (ข้อเสนอ) : Phase B จะย้ายเข้า src/style.css ตามนี้ */
+:root {
+  /* ---- สี: พื้นผิว ---- */
+  --bg: #dfe8ee;
+  --surface: rgba(255, 255, 255, 0.9); /* แผง/การ์ดลอย (มี blur) */
+  --surface-solid: #ffffff; /* การ์ดในแผง ปุ่ม */
+  --surface-sunken: #f1f5f8; /* แถบ/ช่องว่างของ bar */
+  --ink: #15212b;
+  --muted: #56636f; /* ≥ 4.5 บน surface และ accent-soft */
+  --line: rgba(21, 33, 43, 0.12);
+  --line-strong: rgba(21, 33, 43, 0.24);
+  /* ---- สี: แบรนด์/สถานะ ---- */
+  --accent: #1f6fd1; /* พื้นปุ่มที่เลือก (ข้อความขาว 4.9:1) */
+  --accent-ink: #1a5fb4; /* ข้อความ/ไอคอนสีฟ้าบนพื้นอ่อน (≥ 4.5) */
+  --accent-soft: #e3eefb;
+  --on-accent: #ffffff;
+  --focus: #1f6fd1;
+  --rain: #3b82c4;
+  --river: #0e9aa7;
+  --sea: #7b5cc4;
+  --north: #d9822b;
+  --warn: #c2410c;
+  --ok: #15803d;
+  --caution: #a16207; /* เดิม #ca8a04 = 2.9:1 ไม่ผ่าน */
+  --scrim: rgba(10, 18, 26, 0.32);
+
+  /* ---- ระยะห่าง (4 px base) ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --gutter: 12px; /* ระยะจากขอบจอ (มือถือ 8px) */
+
+  /* ---- มุมโค้ง ---- */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px; /* ขอบบน bottom sheet */
+  --r-pill: 999px;
+
+  /* ---- ตัวอักษร (IBM Plex Sans Thai) — ไม่มี letter-spacing ---- */
+  --font: 'IBM Plex Sans Thai', system-ui, sans-serif;
+  --fs-2xs: 11px; /* เล็กสุด: ป้ายแกน/เครดิต */
+  --fs-xs: 12px; /* คำอธิบาย hint */
+  --fs-sm: 13px; /* เนื้อหาในแผง */
+  --fs-md: 14px; /* ปกติ */
+  --fs-input: 16px; /* ช่องกรอก/select (กัน iOS ซูม) */
+  --fs-lg: 18px; /* ตัวเลขสถิติ */
+  --fs-xl: 20px; /* หัวเรื่อง */
+  --fs-2xl: 26px; /* ตัวเลขใหญ่ (ความลึก/โอกาส) */
+  --lh: 1.55;
+  --lh-tight: 1.3;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ---- เงา/ระดับ ---- */
+  --e-1: 0 1px 2px rgba(15, 25, 35, 0.08), 0 1px 1px rgba(15, 25, 35, 0.04);
+  --e-2: 0 4px 14px rgba(15, 25, 35, 0.12), 0 1px 3px rgba(15, 25, 35, 0.08);
+  --e-3: 0 12px 32px rgba(15, 25, 35, 0.18), 0 2px 6px rgba(15, 25, 35, 0.08);
+  --blur: blur(12px) saturate(1.2);
+
+  /* ---- ชั้น (z-index) ---- */
+  --z-labels: 2;
+  --z-overlay: 10; /* legend, attrib, clock */
+  --z-panel: 20; /* แผง/sheet */
+  --z-bar: 30; /* แถบบน */
+  --z-menu: 40; /* เมนูเพิ่มเติม, popover */
+  --z-tip: 50;
+
+  /* ---- การเคลื่อนไหว (transform เท่านั้น) ---- */
+  --dur-1: 120ms;
+  --dur-2: 220ms;
+  --dur-3: 320ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ---- ขนาด ---- */
+  --hit: 44px; /* พื้นที่กดขั้นต่ำบนจอสัมผัส */
+  --bar-h: 44px;
+  --side-w: 360px; /* เดสก์ท็อป */
+  --side-w-tablet: 320px;
+  --side-w-land: min(300px, 42vw);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms;
+    --dur-2: 0ms;
+    --dur-3: 0ms;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0e161d;
+    --surface: rgba(20, 29, 37, 0.9);
+    --surface-solid: #18222c;
+    --surface-sunken: #0f171e;
+    --ink: #e6edf2;
+    --muted: #9aa9b5;
+    --line: rgba(230, 237, 242, 0.12);
+    --line-strong: rgba(230, 237, 242, 0.26);
+    --accent: #2563eb; /* เดิม #5aa2ff + ข้อความขาว = 2.6:1 */
+    --accent-ink: #7cb6ff;
+    --accent-soft: #1b2c40;
+    --focus: #7cb6ff;
+    --rain: #60a5fa;
+    --river: #22b8c5;
+    --sea: #a78bfa;
+    --north: #f0a050;
+    --warn: #fb923c;
+    --ok: #4ade80;
+    --caution: #facc15;
+    --scrim: rgba(0, 0, 0, 0.45);
+    --e-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --e-2: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --e-3: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #0e161d;
+  --surface: rgba(20, 29, 37, 0.9);
+  --surface-solid: #18222c;
+  --surface-sunken: #0f171e;
+  --ink: #e6edf2;
+  --muted: #9aa9b5;
+  --line: rgba(230, 237, 242, 0.12);
+  --line-strong: rgba(230, 237, 242, 0.26);
+  --accent: #2563eb;
+  --accent-ink: #7cb6ff;
+  --accent-soft: #1b2c40;
+  --focus: #7cb6ff;
+  --rain: #60a5fa;
+  --river: #22b8c5;
+  --sea: #a78bfa;
+  --north: #f0a050;
+  --warn: #fb923c;
+  --ok: #4ade80;
+  --caution: #facc15;
+  --scrim: rgba(0, 0, 0, 0.45);
+  --e-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --e-2: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --e-3: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}

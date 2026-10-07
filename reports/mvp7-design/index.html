@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MVP 7 wireframes</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font);
+        font-size: var(--fs-md);
+        line-height: var(--lh);
+        background: var(--bg);
+        color: var(--ink);
+        padding: var(--sp-6);
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 var(--sp-2);
+        line-height: var(--lh-tight);
+      }
+      h2 {
+        font-size: var(--fs-xl);
+        margin: var(--sp-8) 0 var(--sp-3);
+        line-height: var(--lh-tight);
+      }
+      .lead {
+        color: var(--muted);
+        max-width: 860px;
+        margin: 0 0 var(--sp-4);
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-6);
+        align-items: flex-start;
+      }
+      figure {
+        margin: 0;
+      }
+      figcaption {
+        font-size: var(--fs-sm);
+        color: var(--muted);
+        margin-top: var(--sp-2);
+        max-width: 380px;
+      }
+      figcaption b {
+        color: var(--ink);
+      }
+      .num {
+        font-variant-numeric: tabular-nums;
+      }
+      /* ---------- อุปกรณ์ ---------- */
+      .dev {
+        position: relative;
+        overflow: hidden;
+        border-radius: 22px;
+        border: 6px solid #222b33;
+        background: #c9d8e2;
+        box-shadow: var(--e-3);
+        font-size: var(--fs-md);
+      }
+      .dev.desk {
+        border-radius: 8px;
+        border-width: 4px;
+      }
+      .scaled {
+        transform-origin: 0 0;
+      }
+      .holder {
+        position: relative;
+      }
+      .map {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(ellipse at 70% 30%, #b7cc98 0 18%, transparent 40%),
+          radial-gradient(ellipse at 20% 70%, #a9c38c 0 14%, transparent 36%), linear-gradient(160deg, #cbd9a8, #9fb882);
+      }
+      :root[data-theme='dark'] .dev {
+        background: #1d2a22;
+      }
+      :root[data-theme='dark'] .map {
+        filter: brightness(0.55) saturate(0.8);
+      }
+      .map svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      /* จุดสนใจ (กึ่งกลางของพื้นที่ที่มองเห็น — setViewOffset) */
+      .focus {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        margin: -11px 0 0 -11px;
+        border: 2px dashed #e4572e;
+        border-radius: 50%;
+      }
+      .focus::after {
+        content: '';
+        position: absolute;
+        inset: 7px;
+        background: #e4572e;
+        border-radius: 50%;
+      }
+      .safe-top,
+      .safe-bot {
+        position: absolute;
+        left: 0;
+        right: 0;
+        background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.1) 0 4px, transparent 4px 8px);
+        z-index: 60;
+        pointer-events: none;
+      }
+      .safe-top {
+        top: 0;
+        height: 47px;
+      }
+      .safe-bot {
+        bottom: 0;
+        height: 34px;
+      }
+      .notch {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        width: 120px;
+        height: 30px;
+        margin-left: -60px;
+        background: #000;
+        border-radius: 20px;
+        z-index: 61;
+      }
+      /* ---------- ส่วนประกอบ ---------- */
+      .ico {
+        width: 20px;
+        height: 20px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .btn {
+        font: inherit;
+        font-size: var(--fs-sm);
+        min-height: var(--hit);
+        min-width: var(--hit);
+        padding: 0 var(--sp-3);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sp-1);
+        border-radius: var(--r-md);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        backdrop-filter: var(--blur);
+        color: var(--ink);
+        box-shadow: var(--e-1);
+        white-space: nowrap;
+      }
+      .btn.icon {
+        padding: 0;
+      }
+      .btn.on {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .seg {
+        display: inline-flex;
+        border-radius: var(--r-md);
+        box-shadow: var(--e-1);
+      }
+      .seg .btn {
+        border-radius: 0;
+        box-shadow: none;
+        margin-left: -1px;
+      }
+      .seg .btn:first-child {
+        border-radius: var(--r-md) 0 0 var(--r-md);
+        margin: 0;
+      }
+      .seg .btn:last-child {
+        border-radius: 0 var(--r-md) var(--r-md) 0;
+      }
+      .bar {
+        position: absolute;
+        left: var(--gutter);
+        right: var(--gutter);
+        display: flex;
+        gap: var(--sp-2);
+        align-items: center;
+        z-index: 30;
+      }
+      .bar .grow {
+        flex: 1;
+      }
+      .pill {
+        position: absolute;
+        z-index: 10;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+        padding: 0 var(--sp-1) 0 var(--sp-3);
+        min-height: var(--hit);
+        border-radius: var(--r-pill);
+        background: var(--surface);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow: var(--e-2);
+        font-size: var(--fs-xs);
+        white-space: nowrap;
+      }
+      .pill .dotlive {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--river);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--river) 25%, transparent);
+      }
+      .pill .btn {
+        min-height: 36px;
+        border-radius: var(--r-pill);
+        box-shadow: none;
+      }
+      .chip-fl {
+        position: absolute;
+        z-index: 10;
+      }
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 20;
+        background: var(--surface-solid);
+        border-radius: var(--r-xl) var(--r-xl) 0 0;
+        box-shadow: var(--e-3);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 22px;
+        flex: none;
+      }
+      .handle i {
+        width: 40px;
+        height: 5px;
+        border-radius: 3px;
+        background: var(--line-strong);
+      }
+      .peek {
+        padding: 0 var(--sp-4) var(--sp-2);
+        flex: none;
+      }
+      .peek .t {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+      }
+      .peek .t b {
+        font-size: var(--fs-md);
+        flex: 1;
+        line-height: var(--lh-tight);
+      }
+      .lvl {
+        display: inline-flex;
+      }
+      .chips {
+        display: flex;
+        gap: var(--sp-2);
+        overflow-x: auto;
+        margin: var(--sp-2) calc(-1 * var(--sp-4)) 0;
+        padding: 0 var(--sp-4) var(--sp-1);
+        scrollbar-width: none;
+      }
+      .chip {
+        font: inherit;
+        font-size: var(--fs-sm);
+        min-height: var(--hit);
+        padding: 0 var(--sp-3);
+        border-radius: var(--r-pill);
+        border: 1px solid var(--line);
+        background: var(--surface-solid);
+        color: var(--ink);
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+      }
+      .chip.on {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+        font-weight: var(--fw-semibold);
+      }
+      .kpi {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-3);
+        margin-top: var(--sp-2);
+        font-size: var(--fs-xs);
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .kpi b {
+        color: var(--ink);
+        font-size: var(--fs-sm);
+      }
+      .kpi .mini {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--surface-sunken);
+        position: relative;
+        overflow: hidden;
+        max-width: 80px;
+      }
+      .kpi .mini i {
+        position: absolute;
+        inset: 0 40% 0 0;
+        background: var(--river);
+      }
+      .kpi .mini s {
+        position: absolute;
+        left: 70%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--ink);
+      }
+      .disc-s {
+        font-size: var(--fs-2xs);
+        color: var(--muted);
+        margin-top: var(--sp-1);
+        display: flex;
+        gap: var(--sp-1);
+        align-items: center;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        flex: none;
+        padding: 0 var(--sp-2);
+      }
+      .tab {
+        font: inherit;
+        font-size: var(--fs-sm);
+        flex: 1;
+        min-height: var(--hit);
+        background: none;
+        border: 0;
+        color: var(--muted);
+        border-bottom: 2px solid transparent;
+        padding: 0 var(--sp-1);
+        white-space: nowrap;
+      }
+      .tab.on {
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: var(--fw-semibold);
+      }
+      .tab .badge {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #e4572e;
+        margin-left: 3px;
+        vertical-align: 2px;
+      }
+      .body {
+        padding: var(--sp-3) var(--sp-4);
+        overflow: hidden;
+        flex: 1;
+        font-size: var(--fs-sm);
+      }
+      .ph {
+        border-radius: var(--r-md);
+        background: var(--surface-sunken);
+        border: 1px dashed var(--line-strong);
+        color: var(--muted);
+        font-size: var(--fs-xs);
+        padding: var(--sp-2) var(--sp-3);
+        margin-bottom: var(--sp-2);
+      }
+      .slider {
+        margin-bottom: var(--sp-3);
+      }
+      .slider .r {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--fs-sm);
+      }
+      .slider .r b {
+        font-variant-numeric: tabular-nums;
+      }
+      .track {
+        position: relative;
+        height: var(--hit);
+        display: flex;
+        align-items: center;
+      }
+      .track::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--surface-sunken);
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
+      .track i {
+        position: absolute;
+        left: 0;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--accent);
+      }
+      .track s {
+        position: absolute;
+        width: 26px;
+        height: 26px;
+        margin-left: -13px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid var(--accent);
+        box-shadow: var(--e-2);
+      }
+      .stat2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--sp-2);
+        margin-bottom: var(--sp-2);
+      }
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: var(--r-md);
+        padding: var(--sp-2) var(--sp-3);
+      }
+      .stat .k {
+        font-size: var(--fs-xs);
+        color: var(--muted);
+      }
+      .stat .v {
+        font-size: var(--fs-lg);
+        font-weight: var(--fw-bold);
+        font-variant-numeric: tabular-nums;
+      }
+      .menu {
+        position: absolute;
+        z-index: 40;
+        background: var(--surface-solid);
+        border-radius: var(--r-lg);
+        box-shadow: var(--e-3);
+        border: 1px solid var(--line);
+        padding: var(--sp-2);
+        font-size: var(--fs-sm);
+      }
+      .menu .grp {
+        font-size: var(--fs-2xs);
+        color: var(--muted);
+        padding: var(--sp-2) var(--sp-2) var(--sp-1);
+        font-weight: var(--fw-semibold);
+      }
+      .menu .it {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        min-height: var(--hit);
+        padding: 0 var(--sp-2);
+        border-radius: var(--r-sm);
+      }
+      .menu .it.on {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: var(--fw-semibold);
+      }
+      .menu .segrow {
+        display: flex;
+        gap: var(--sp-1);
+        padding: 0 var(--sp-1) var(--sp-1);
+      }
+      .menu .segrow .chip {
+        flex: 1;
+        justify-content: center;
+        padding: 0 var(--sp-2);
+      }
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: var(--scrim);
+        z-index: 35;
+      }
+      .legend-pop {
+        position: absolute;
+        z-index: 40;
+        background: var(--surface-solid);
+        border-radius: var(--r-lg);
+        box-shadow: var(--e-3);
+        padding: var(--sp-3);
+        font-size: var(--fs-xs);
+        border: 1px solid var(--line);
+      }
+      .ramp {
+        height: 10px;
+        border-radius: 5px;
+        background: linear-gradient(90deg, #9fd3e0, #3f8fd0 30%, #1c3f8f);
+        margin: var(--sp-1) 0;
+      }
+      .tipcard {
+        position: absolute;
+        z-index: 50;
+        background: var(--surface-solid);
+        border-radius: var(--r-md);
+        box-shadow: var(--e-3);
+        padding: var(--sp-2) var(--sp-3);
+        font-size: var(--fs-xs);
+        border: 1px solid var(--line);
+        line-height: var(--lh);
+      }
+      .side {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 20;
+        background: var(--surface);
+        backdrop-filter: var(--blur);
+        border-right: 1px solid var(--line);
+        box-shadow: var(--e-2);
+        display: flex;
+        flex-direction: column;
+      }
+      .side.float {
+        top: var(--gutter);
+        bottom: var(--gutter);
+        left: var(--gutter);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+      }
+      .side .hd {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
+        flex: none;
+      }
+      .side .hd b {
+        flex: 1;
+        font-size: var(--fs-md);
+        line-height: var(--lh-tight);
+      }
+      .logo {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #3b82c4, #0e9aa7);
+        flex: none;
+      }
+      .rail {
+        position: absolute;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+      }
+      .card {
+        position: absolute;
+        z-index: 10;
+        background: var(--surface);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        box-shadow: var(--e-2);
+        padding: var(--sp-3);
+        font-size: var(--fs-xs);
+      }
+      .anno {
+        position: absolute;
+        z-index: 70;
+        font-size: 11px;
+        background: #e4572e;
+        color: #fff;
+        border-radius: 4px;
+        padding: 0 5px;
+        line-height: 18px;
+        white-space: nowrap;
+        font-weight: 600;
+      }
+      /* ---------- tokens ---------- */
+      .tok {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: var(--sp-2);
+        max-width: 1200px;
+      }
+      .sw {
+        border-radius: var(--r-md);
+        border: 1px solid var(--line);
+        overflow: hidden;
+        background: var(--surface-solid);
+        font-size: var(--fs-xs);
+      }
+      .sw i {
+        display: block;
+        height: 40px;
+      }
+      .sw div {
+        padding: var(--sp-1) var(--sp-2);
+      }
+      .sw code {
+        color: var(--muted);
+        font-size: var(--fs-2xs);
+      }
+      table.t {
+        border-collapse: collapse;
+        font-size: var(--fs-sm);
+        margin: var(--sp-2) 0;
+      }
+      table.t td,
+      table.t th {
+        border-bottom: 1px solid var(--line);
+        padding: var(--sp-1) var(--sp-3);
+        text-align: left;
+        vertical-align: top;
+      }
+      table.t th {
+        color: var(--muted);
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-xs);
+      }
+      .themebtn {
+        position: fixed;
+        top: var(--sp-3);
+        right: var(--sp-3);
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute">
+      <!-- ชุดไอคอนเดียวทั้งแอป: เส้น 1.8, มุมมน, กรอบ 24 -->
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" /><circle cx="12" cy="12" r="1.3" /><circle cx="19" cy="12" r="1.3" /></symbol>
+      <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z" /><circle cx="12" cy="10" r="2.2" /></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5zM2 13l10 5 10-5" /></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.5" /></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6" /></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+      <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6" /></symbol>
+      <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></symbol>
+      <symbol id="i-replay" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5" /><path d="M4 4v4.5h4.5" /></symbol>
+      <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z" /><circle cx="12" cy="13" r="3.5" /></symbol>
+      <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z" /><circle cx="7.5" cy="8.5" r="1.3" /></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 12h16M12 4v16" /></symbol>
+      <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z" /><path d="M12 10v4M12 17v.5" /></symbol>
+    </svg>
+    <button class="btn themebtn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">สลับ สว่าง/มืด</button>
+
+    <h1>MVP 7 — ข้อเสนอ layout ทุก breakpoint</h1>
+    <p class="lead">
+      wireframe แบบนิ่ง (ขนาดจริง px) วาดด้วย design tokens ชุดที่เสนอ (<code>tokens.css</code>) · วงกลมประสีส้ม = จุดกึ่งกลางภาพหลัง
+      <code>camera.setViewOffset</code> (กึ่งกลางของพื้นที่ที่ไม่ถูกบัง) · ลายทแยง = safe area ของ iPhone · ป้ายสีส้ม = หมายเหตุ
+    </p>
+
+    <div id="root"></div>
+
+    <script>
+      const I = (n, cls = '') => `<svg class="ico ${cls}"><use href="#i-${n}"/></svg>`;
+      const MAP = (fx, fy) => `<div class="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path d="M30 -5 C 45 20, 25 40, 48 55 S 60 85, 52 105" stroke="#5a9fc4" stroke-width="3.2" fill="none" opacity=".85"/>
+        <path d="M0 62 C 30 58, 60 70, 100 60" stroke="#6d8fb0" stroke-width=".6" fill="none" stroke-dasharray="2 1.5"/>
+        <path d="M70 0 L72 100" stroke="#6b8a4a" stroke-width="1.2" fill="none"/></svg>
+        <div class="focus" style="left:${fx};top:${fy}"></div></div>`;
+      const PRESETS = ['วันปกติ', 'ฝนตกหนักกลางเมือง', 'น้ำเหนือหลาก', 'น้ำทะเลหนุนสูง', '3 น้ำพร้อมกัน (2554)', 'อนาคต'];
+      const chips = (on = 0) => `<div class="chips">${PRESETS.map((p, i) => `<span class="chip ${i === on ? 'on' : ''}">${p}</span>`).join('')}</div>`;
+      const kpi = () => `<div class="kpi"><span>เจ้าพระยา <b>1.62</b> / สันเขื่อน 2.80 ม.</span><span class="mini"><i></i><s></s></span><span>ท่วม <b>12</b> ตร.กม.</span></div>`;
+      const disc = () => `<div class="disc-s">${I('warn')}<span>แบบจำลองเพื่อการศึกษา ไม่ใช่การพยากรณ์</span></div>`;
+      const lvlBtns = (lv) =>
+        `<span class="lvl seg"><button class="btn icon" aria-label="ย่อ">${I('down')}</button><button class="btn icon" aria-label="ขยาย">${I('up')}</button></span>`;
+      const TABS = ['สถานการณ์', 'ปรับปัจจัย', 'ผลลัพธ์', 'เรียนรู้'];
+      const tabs = (on, here) =>
+        `<div class="tabs" role="tablist">${(here ? ['ที่นี่', ...TABS] : TABS).map((t, i) => `<button class="tab ${i === on ? 'on' : ''}" role="tab">${t}${here && i === 0 ? '<span class="badge"></span>' : ''}</button>`).join('')}</div>`;
+      const slider = (n, v, p) =>
+        `<div class="slider"><div class="r"><span>${n}</span><b>${v}</b></div><div class="track"><i style="width:${p}%"></i><s style="left:${p}%"></s></div></div>`;
+      const BODY = {
+        scen: `<div class="ph">การ์ด preset 2 คอลัมน์ (ชื่อ + คำอธิบายสั้น 1 บรรทัด) — กดแล้วเริ่มแอนิเมชันใหม่</div><div class="ph">ระบบป้องกัน: สวิตช์ 3 แถว (แถวละ 44 px)</div><div class="ph">โหมดพื้นที่ศึกษา: คำเตือน datum + ชื่อแผ่น</div>`,
+        fac:
+          slider('น้ำฝน', '80 มม./ชม.', 53) +
+          slider('ฝนตกนาน', '2 ชม.', 20) +
+          slider('น้ำเหนือ', '2,500 ลบ.ม./วิ', 44) +
+          slider('น้ำทะเลหนุน', '1.60 ม.', 52) +
+          slider('แผ่นดินทรุดเพิ่ม', '20 ซม.', 20),
+        res: `<div class="ph">เกจระดับเจ้าพระยา (ปากคลองตลาด) เทียบสันเขื่อน</div><div class="stat2"><div class="stat"><div class="k">พื้นที่น้ำท่วม (&gt;10 ซม.)</div><div class="v">412 ตร.กม.</div></div><div class="stat"><div class="k">ท่วมลึกเกิน 50 ซม.</div><div class="v">96 ตร.กม.</div></div></div><div class="ph">แถบสาเหตุ 4 แถว + ข้อความอธิบาย</div>`,
+        learn: `<div class="ph">น้ำ 3 น้ำ + แผ่นดินทรุด (ย่อหน้า)</div><div class="ph">⚠️ คำเตือนฉบับเต็ม (DISCLAIMER) + หมายเหตุพื้นที่ศึกษา</div><div class="ph">เครดิตข้อมูล (attribution เต็ม)</div>`,
+        here: `<div class="ph">📍 ใกล้เขตสัมพันธวงศ์ · 13.74050, 100.51050 · GPS ±25 ม. [ไปที่หมุด] [ลบหมุด]</div><div class="stat2"><div class="stat"><div class="k">จำลองตามค่าที่ตั้ง</div><div class="v">ไม่ท่วม</div></div><div class="stat"><div class="k">พรุ่งนี้ (พยากรณ์)</div><div class="v" style="color:var(--ok)">0%</div></div></div><div class="ph">พยากรณ์ 7 วัน (แถบรายวัน) · ทุกสถานการณ์ตัวอย่าง (ตาราง) — เลื่อนใน sheet</div>`,
+      };
+      const phoneTop = (study, menuOpen) => `<div class="bar" style="top:calc(47px + 8px)">
+          <span class="seg grow" style="display:flex"><button class="btn ${study ? '' : 'on'}" style="flex:1">ภาพรวม</button><button class="btn ${study ? 'on' : ''}" style="flex:1">พื้นที่ศึกษา</button></span>
+          <button class="btn icon" aria-label="ตำแหน่งของฉัน">${I('locate')}</button>
+          <button class="btn icon ${menuOpen ? 'on' : ''}" aria-label="เพิ่มเติม">${I('more')}</button></div>`;
+      const phoneChrome = () => `<div class="safe-top"></div><div class="notch"></div><div class="safe-bot"></div>`;
+      const sheetH = { peek: 196, half: 400, full: 667 - 47 - 60 };
+
+      function phone({ level = 'peek', tab = 0, here = false, study = false, menu = false, legend = false, tip = false, w = 393, h = 852, cap }) {
+        const H = level === 'peek' ? 196 + 34 : level === 'half' ? Math.round(h * 0.52) : h - 47 - 60;
+        const freeTop = 47 + 60,
+          freeBot = h - H;
+        const fy = ((freeTop + freeBot) / 2 / h) * 100 + '%';
+        const tabKey = here ? ['here', 'scen', 'fac', 'res', 'learn'][tab] : ['scen', 'fac', 'res', 'learn'][tab];
+        const peek = `<div class="handle" aria-hidden="true"><i></i></div><div class="peek">
+            <div class="t"><span class="logo"></span><b>ทำไมกรุงเทพฯ น้ำท่วม?</b>${lvlBtns(level)}</div>${chips(0)}${kpi()}${level === 'peek' ? disc() : ''}</div>`;
+        const body = level === 'peek' ? '' : `${tabs(tab, here)}<div class="body">${BODY[tabKey]}</div>`;
+        const pillBottom = H + 8;
+        const pill =
+          level === 'full'
+            ? ''
+            : `<div class="pill" style="left:50%;transform:translateX(-50%);bottom:${pillBottom}px"><span class="dotlive"></span>น้ำกำลังเคลื่อนตัว<button class="btn on" aria-label="เล่นใหม่">${I('replay')}</button></div>
+               <div class="chip-fl" style="left:8px;bottom:${pillBottom}px"><button class="btn icon" aria-label="เครดิตข้อมูล">${I('info')}</button></div>
+               <div class="chip-fl" style="right:8px;top:${47 + 60}px"><button class="btn" aria-label="คำอธิบายสัญลักษณ์"><span class="ramp" style="width:36px;margin:0"></span>${I('down')}</button></div>`;
+        const menuHtml = menu
+          ? `<div class="scrim"></div><div class="menu" style="right:8px;top:${47 + 56}px;width:280px">
+              <div class="grp">มุมมอง</div><div class="segrow"><span class="chip on">ภาพเมือง</span><span class="chip">แผนที่ความสูง</span></div>
+              ${study ? `<div class="grp">คุณภาพภาพ</div><div class="segrow"><span class="chip">เรียบง่าย</span><span class="chip on">สมจริง</span><span class="chip">สมจริง+</span></div>
+              <div class="grp">พื้นที่ (แผ่น)</div><div class="segrow"><span class="chip" style="flex:3">📍 คลองเตย–ปทุมวัน ${I('down')}</span><span class="chip">${I('grid')}</span></div>` : ''}
+              <div class="grp">มุมกล้อง</div><div class="it">${I('camera')}ทั้งเมือง</div><div class="it">${I('camera')}ใจกลางเมือง</div><div class="it">${I('camera')}ปากแม่น้ำ</div>
+              <div class="it on">${I('tag')}ป้ายชื่อ: เปิด</div><div class="it">${I('pin')}ปักหมุดบนแผนที่</div></div>`
+          : '';
+        const legendHtml = legend
+          ? `<div class="legend-pop" style="right:8px;top:${47 + 56}px;width:260px"><b>ความลึกน้ำท่วม</b><div class="ramp"></div><div style="display:flex;justify-content:space-between;color:var(--muted)" class="num"><span>0</span><span>30 ซม.</span><span>1 ม.+</span></div><div style="margin-top:8px;font-weight:600;color:var(--muted)">ระบบป้องกัน (กดเพื่อดูข้อมูล)</div><div class="it" style="display:flex;gap:6px;min-height:44px;align-items:center">▮ เขื่อนริมแม่น้ำ</div><div class="it" style="display:flex;gap:6px;min-height:44px;align-items:center">● สถานีสูบน้ำ</div></div>`
+          : '';
+        const tipHtml = tip
+          ? `<div class="tipcard" style="left:60px;top:${freeTop + 90}px;width:230px"><b>ป้อมปราบศัตรูพ่าย</b> <span style="color:var(--muted)">(โดยประมาณ)</span><br>ความสูงพื้น 1.42 ม.รทก.<br>น้ำท่วม 18 ซม. · น้ำฝนขัง</div><div class="focus" style="left:150px;top:${freeTop + 168}px;border-color:var(--accent)"></div>`
+          : '';
+        return `<figure><div class="dev" style="width:${w + 12}px;height:${h + 12}px"><div style="position:absolute;inset:0">
+          ${MAP('50%', fy)}${phoneChrome()}${phoneTop(study, menu)}${pill}
+          <div class="sheet" style="height:${H}px;padding-bottom:${level === 'peek' ? 34 : 0}px" role="dialog" aria-label="แผงควบคุม">${peek}${body}</div>
+          ${menuHtml}${legendHtml}${tipHtml}</div></div><figcaption>${cap}</figcaption></figure>`;
+      }
+
+      function land({ open = true, cap }) {
+        const w = 852,
+          h = 393,
+          sw = open ? 300 : 0;
+        const fx = (((open ? sw + 59 : 59) + (w - 47)) / 2 / w) * 100 + '%';
+        const side = open
+          ? `<div class="side" style="width:${sw + 59}px;padding-left:59px"><div class="hd"><span class="logo"></span><b>ทำไมกรุงเทพฯ น้ำท่วม?</b><button class="btn icon" aria-label="พับแผง">${I('left')}</button></div>${tabs(1)}<div class="body">${slider('น้ำฝน', '80 มม./ชม.', 53)}${slider('น้ำเหนือ', '2,500 ลบ.ม./วิ', 44)}<div class="ph">เลื่อนต่อในแผง…</div></div>
+             <div style="padding:0 16px 8px">${kpi()}${disc()}</div></div>`
+          : `<div class="rail" style="left:${59 + 8}px;top:8px"><button class="btn icon on" aria-label="เปิดแผง">${I('panel')}</button></div>
+             <div class="card" style="left:${59 + 8}px;bottom:21px;width:260px">${kpi()}${disc()}</div>`;
+        return `<figure><div class="dev" style="width:${w + 12}px;height:${h + 12}px"><div style="position:absolute;inset:0">${MAP(fx, '55%')}
+          <div style="position:absolute;left:0;top:0;bottom:0;width:59px" class="safe-top"></div><div style="position:absolute;right:0;top:0;bottom:0;width:47px" class="safe-top"></div>
+          ${side}
+          <div class="bar" style="top:8px;left:${(open ? sw + 59 : 59 + 52) + 8}px;right:${47 + 8}px;justify-content:flex-end">
+            <span class="seg"><button class="btn on">ภาพรวม</button><button class="btn">พื้นที่ศึกษา</button></span>
+            <button class="btn icon">${I('locate')}</button><button class="btn icon">${I('more')}</button></div>
+          <div class="pill" style="left:${(open ? sw + 59 : 59 + 276) + 8}px;bottom:12px"><span class="dotlive"></span>ถึงจุดสมดุลแล้ว<button class="btn on">${I('replay')}</button></div>
+          <div class="chip-fl" style="right:${47 + 8}px;bottom:12px;display:flex;gap:8px"><button class="btn icon">${I('info')}</button><button class="btn"><span class="ramp" style="width:36px;margin:0"></span>${I('up')}</button></div>
+          </div></div><figcaption>${cap}</figcaption></figure>`;
+      }
+
+      function tablet({ open = true, here = false, cap, scale = 0.55 }) {
+        const w = 820,
+          h = 1180,
+          sw = open ? 320 : 0;
+        const fx = (((open ? sw + 12 : 0) + w) / 2 / w) * 100 + '%';
+        const side = open
+          ? `<div class="side float" style="width:${sw}px"><div class="hd"><span class="logo"></span><b>ทำไมกรุงเทพฯ น้ำท่วม?</b><button class="btn icon">${I('left')}</button></div>${tabs(here ? 0 : 0, here)}<div class="body">${here ? BODY.here : BODY.scen + BODY.res}</div><div style="padding:8px 16px">${disc()}</div></div>`
+          : `<div class="rail" style="left:12px;top:12px"><button class="btn icon on">${I('panel')}</button></div><div class="card" style="left:12px;bottom:12px;width:300px">${kpi()}${disc()}</div>`;
+        return `<figure><div class="holder" style="width:${(w + 12) * scale}px;height:${(h + 12) * scale}px"><div class="scaled" style="transform:scale(${scale})"><div class="dev" style="width:${w + 12}px;height:${h + 12}px"><div style="position:absolute;inset:0">${MAP(fx, '50%')}${side}
+          <div class="bar" style="top:12px;left:${(open ? sw + 24 : 68)}px;justify-content:flex-end;flex-wrap:wrap">
+            <span class="seg"><button class="btn on">ภาพรวม</button><button class="btn">พื้นที่ศึกษา</button></span>
+            <span class="seg"><button class="btn on">ภาพเมือง</button><button class="btn">ความสูง</button></span>
+            <button class="btn icon">${I('locate')}</button><button class="btn icon">${I('more')}</button></div>
+          <div class="pill" style="left:${open ? sw + 24 : 340}px;bottom:16px"><span class="dotlive"></span>ถึงจุดสมดุลแล้ว<button class="btn on">${I('replay')} เล่นใหม่</button></div>
+          <div class="chip-fl" style="right:12px;bottom:16px;display:flex;gap:8px"><button class="btn icon">${I('info')}</button><button class="btn"><span class="ramp" style="width:36px;margin:0"></span>${I(here ? 'down' : 'up')}</button></div>
+          ${here ? `<div class="legend-pop" style="right:12px;bottom:72px;width:260px"><b>ความลึกน้ำท่วม</b><div class="ramp"></div><div class="ph" style="margin:6px 0 0">ระบบป้องกัน (กดได้) + การ์ดข้อมูล</div></div>` : ''}
+          </div></div></div></div><figcaption>${cap}</figcaption></figure>`;
+      }
+
+      function desk({ open = true, here = true, cap, scale = 0.62 }) {
+        const w = 1280,
+          h = 800,
+          sw = open ? 360 : 0;
+        const rightW = here ? 340 + 12 : 0;
+        const fx = (((open ? sw + 12 : 0) + w - rightW) / 2 / w) * 100 + '%';
+        const side = open
+          ? `<div class="side float" style="width:${sw}px"><div class="hd"><span class="logo" style="width:40px;height:40px"></span><b style="font-size:20px">ทำไมกรุงเทพฯ น้ำท่วม?</b><button class="btn icon" title="พับแผง (ดูแผนที่เต็มจอ)">${I('left')}</button></div><div class="body" style="overflow:hidden">
+              <div style="color:var(--muted);font-size:13px;margin-bottom:8px">แผงเลื่อนยาวแบบเดิม (ไม่แบ่งแท็บ)</div><div class="ph">สถานการณ์ตัวอย่าง (2 คอลัมน์)</div>${slider('น้ำฝน', '80 มม./ชม.', 53)}${slider('ฝนตกนาน', '2 ชม.', 20)}${slider('น้ำเหนือ', '2,500 ลบ.ม./วิ', 44)}<div class="ph">ระบบป้องกัน · ผลลัพธ์ · เรียนรู้ · คำเตือน</div></div></div>`
+          : `<div class="rail" style="left:12px;top:12px"><button class="btn icon on">${I('panel')}</button></div><div class="card" style="left:12px;bottom:12px;width:320px">${kpi()}${disc()}</div>`;
+        const card = here
+          ? `<div class="card" style="right:12px;top:${12 + 44 + 8 + 44 + 8}px;width:340px;bottom:${12 + 150 + 12}px"><b style="font-size:16px">ที่นี่ท่วมไหม?</b><div class="ph" style="margin-top:8px">ตำแหน่ง + จำลองตามค่าที่ตั้ง + พยากรณ์ 7 วัน + ทุกสถานการณ์ (เลื่อนในการ์ด)</div></div>`
+          : '';
+        return `<figure><div class="holder" style="width:${(w + 8) * scale}px;height:${(h + 8) * scale}px"><div class="scaled" style="transform:scale(${scale})"><div class="dev desk" style="width:${w + 8}px;height:${h + 8}px"><div style="position:absolute;inset:0">${MAP(fx, '50%')}${side}
+          <div class="bar" style="top:12px;left:${(open ? sw + 24 : 68)}px;justify-content:flex-end;flex-wrap:wrap;row-gap:8px">
+            <span class="seg"><button class="btn">${I('locate')} ตำแหน่งของฉัน</button><button class="btn">${I('pin')} ปักหมุด</button></span>
+            <span class="seg"><button class="btn">ภาพรวมทั้งเมือง</button><button class="btn on">พื้นที่ศึกษา (ข้อมูลจริง)</button></span>
+            <span class="seg"><button class="btn">เรียบง่าย</button><button class="btn on">สมจริง</button><button class="btn">สมจริง+</button></span>
+            <span class="seg"><button class="btn on">ภาพเมือง</button><button class="btn">แผนที่ความสูง</button></span><button class="btn on">${I('tag')} ป้ายชื่อ</button>
+            <span class="seg"><button class="btn">📍 คลองเตย–ปทุมวัน ${I('down')}</button><button class="btn icon">${I('left')}</button><button class="btn icon">${I('up')}</button><button class="btn icon">${I('down')}</button><button class="btn icon">${I('right')}</button></span>
+            <span class="seg"><button class="btn">ทั้งพื้นที่</button><button class="btn">เกาะรัตนโกสินทร์</button><button class="btn">เยาวราช</button><button class="btn">คลองเตย</button></span></div>
+          ${card}
+          <div class="card" style="right:12px;bottom:12px;width:340px;height:150px"><b>ความลึกน้ำท่วม</b><div class="ramp"></div><div class="ph" style="margin:6px 0 0">ระบบป้องกันและแผนที่ (กดได้)</div></div>
+          <div class="pill" style="left:${fx};transform:translateX(-50%);bottom:12px"><span class="dotlive"></span>ถึงจุดสมดุลแล้ว<button class="btn on">${I('replay')} เล่นใหม่</button></div>
+          <div class="chip-fl" style="left:${fx};transform:translateX(-50%);bottom:68px;font-size:11px;color:var(--muted);background:var(--surface);padding:2px 10px;border-radius:8px;white-space:nowrap">ความสูงพื้นที่: FABDEM V1-2 … · © OpenStreetMap contributors · texture: Poly Haven</div>
+          </div></div></div></div><figcaption>${cap}</figcaption></figure>`;
+      }
+
+      const sec = (t, lead, html) => `<h2>${t}</h2>${lead ? `<p class="lead">${lead}</p>` : ''}<div class="row">${html}</div>`;
+      let out = '';
+      out += sec(
+        '1. มือถือแนวตั้ง (< 600 px) — bottom sheet 3 ระดับ',
+        'sheet อยู่ล่างจอ ลาก handle หรือกดปุ่ม ˅ ˄ เพื่อเปลี่ยนระดับ (peek ≈ 196 px + safe area · half ≈ 52% · full = ใต้แถบบน) · snap ด้วย transform · แผนที่ไม่ขยับตามขณะลาก · จุดกึ่งกลางภาพเลื่อนขึ้นตามระดับ sheet (setViewOffset) · pill สถานะ + ⓘ ลอยเหนือ sheet เสมอ · legend เป็นชิปมุมขวาบน',
+        phone({ level: 'peek', cap: '<b>A. peek</b> — ชื่อ, ชิป preset เลื่อนแนวนอน, ผลหลัก 1 บรรทัด (ระดับน้ำเทียบสันเขื่อน + พื้นที่ท่วม), คำเตือนสั้น' }) +
+          phone({ level: 'half', tab: 1, cap: '<b>B. half · แท็บ "ปรับปัจจัย"</b> — thumb 26 px พื้นที่กด 44 px · เมื่อเปิด half ขึ้นไป แท็บ 4 อัน' }) +
+          phone({ level: 'full', tab: 2, cap: '<b>C. full · แท็บ "ผลลัพธ์"</b> — pill/ชิปซ่อน (sheet บังแผนที่ทั้งหมดอยู่แล้ว)' }) +
+          phone({ level: 'half', tab: 0, here: true, study: true, cap: '<b>D. มีหมุด</b> — แท็บ "ที่นี่" (จุดแดง) ขึ้นเป็นแท็บแรกและเปิดให้อัตโนมัติ แทนการ์ดลอย; กด × ในแท็บ = ลบหมุด' }),
+      );
+      out += `<div class="row" style="margin-top:24px">${
+        phone({ level: 'peek', study: true, menu: true, w: 375, h: 667, cap: '<b>E. เมนู "เพิ่มเติม" (375×667)</b> — มุมมอง, คุณภาพ, เลือกแผ่น/ตาราง, มุมกล้อง, ป้ายชื่อ, ปักหมุด · role=menu, Esc/แตะนอกเมนูปิด' }) +
+        phone({ level: 'peek', legend: true, w: 375, h: 667, cap: '<b>F. legend ขยาย</b> — กดชิปแล้วเปิด popover; รายการระบบป้องกันกดได้ (44 px) การ์ดข้อมูลแสดงใน popover เดียวกัน' }) +
+        phone({ level: 'peek', tip: true, w: 375, h: 667, cap: '<b>G. แตะ 1 ครั้งบนแผนที่</b> (hover: none) — แสดงการ์ดข้อมูลจุดนั้นค้างไว้ แตะที่อื่น/ลากเพื่อปิด · ระหว่างโหมดปักหมุด การแตะ = ปักหมุด (ไม่แสดงการ์ด)' })
+      }</div>`;
+      out += sec(
+        '2. มือถือแนวนอน (สูง < 500 px) — side sheet แคบด้านซ้าย พับได้',
+        'แผงซ้ายกว้าง min(300 px, 42vw) + safe area ซ้าย (รอยบาก) · แท็บเดียวกับแนวตั้ง · พับแล้วเหลือปุ่มเปิดแผง + การ์ดผลหลักเล็ก ๆ · แถบบนแบบย่อเหมือนมือถือ',
+        land({ open: true, cap: '<b>H. เปิดแผง</b> (852×393)' }) + land({ open: false, cap: '<b>I. พับแผง</b> — แผนที่เต็มจอ, จุดกึ่งกลางกลับมากลางจอ' }),
+      );
+      out += sec(
+        '3. แท็บเล็ต (600–1024 px) — แผงข้าง 320 px พับเก็บได้',
+        'แผงลอยด้านซ้าย 320 px แบ่งแท็บเหมือนมือถือ (เนื้อหายาวเกินจอ) · มีหมุด → แท็บ "ที่นี่" ในแผง (ไม่ลอยทับแผนที่ที่เหลือแค่ ~490 px) · แถบบนแสดงโหมด/มุมมอง/ตำแหน่ง ที่เหลือในเมนู "เพิ่มเติม" · legend เป็นชิปมุมขวาล่าง (กดขยาย) เพื่อไม่ชน pill สถานะ',
+        tablet({ open: true, cap: '<b>J. 820×1180 เปิดแผง</b> (ย่อ 55%)' }) +
+          tablet({ open: true, here: true, cap: '<b>K. มีหมุด + legend ขยาย</b> — แท็บ "ที่นี่" ในแผง; legend เป็นชิป กดแล้วเปิด popover' }) +
+          tablet({ open: false, cap: '<b>L. พับแผง</b>' }),
+      );
+      out += sec(
+        '4. เดสก์ท็อป (> 1024 px) — แผงข้างแบบเดิม + ปุ่มพับ',
+        'แผงซ้าย 360 px เลื่อนยาวแบบเดิม (ไม่แบ่งแท็บ) · คอลัมน์ขวา (layout manager จัด): แถบบน → การ์ดหมุด → legend ไม่ทับกันโดยคำนวณจากความสูงจริง · pill + attribution กลางพื้นที่แผนที่ · Space ค้างเพื่อเลื่อนแผนที่ตามเดิม',
+        desk({ open: true, here: true, cap: '<b>M. 1280×800 พื้นที่ศึกษา + การ์ดหมุด</b> (ย่อ 62%) — แถบบนขึ้น 2 แถวได้ แต่การ์ดเริ่มใต้แถวสุดท้ายเสมอ' }) +
+          desk({ open: false, here: false, cap: '<b>N. พับแผง</b> — ดูแผนที่เต็มจอ, เหลือการ์ดผลหลักเล็ก' }),
+      );
+      document.getElementById('root').innerHTML = out;
+    </script>
+
+    <h2>5. design tokens</h2>
+    <p class="lead">
+      ไฟล์ <code>tokens.css</code> · ทุก component ใช้ตัวแปรเหล่านี้แทนตัวเลขตายตัว · ค่าสีโหมดมืดปรับให้ผ่าน WCAG AA (ดูตารางความคมชัดใน
+      <code>../mvp7-audit.md</code>)
+    </p>
+    <div class="tok" id="sw"></div>
+    <script>
+      const cs = getComputedStyle(document.documentElement);
+      document.getElementById('sw').innerHTML = [
+        'bg', 'surface', 'surface-solid', 'surface-sunken', 'ink', 'muted', 'line-strong', 'accent', 'accent-ink', 'accent-soft',
+        'rain', 'river', 'sea', 'north', 'warn', 'ok', 'caution',
+      ]
+        .map((k) => `<div class="sw"><i style="background:var(--${k})"></i><div>--${k}<br><code>${cs.getPropertyValue('--' + k).trim()}</code></div></div>`)
+        .join('');
+    </script>
+    <table class="t">
+      <tr><th>กลุ่ม</th><th>tokens</th><th>ใช้กับ</th></tr>
+      <tr><td>ระยะ</td><td class="num">--sp-1…8 = 4 · 8 · 12 · 16 · 20 · 24 · 32 px, --gutter 12 (มือถือ 8)</td><td>padding, gap, ระยะจากขอบจอ</td></tr>
+      <tr><td>มุมโค้ง</td><td class="num">--r-sm 6 · --r-md 10 · --r-lg 14 · --r-xl 20 · --r-pill</td><td>ปุ่ม/ชิป · การ์ด · แผง · ขอบบน sheet · pill</td></tr>
+      <tr><td>ตัวอักษร</td><td class="num">11 · 12 · 13 · 14 · 16 (input) · 18 · 20 · 26 px · line-height 1.55 (หัวเรื่อง 1.3) · ไม่มี letter-spacing · ตัวเลข tabular-nums</td><td>ลดจาก 15 ขนาดเดิม (10–22 px ปนกัน) เหลือ 8 ขั้น</td></tr>
+      <tr><td>เงา</td><td>--e-1 (ปุ่ม) · --e-2 (การ์ดลอย/pill) · --e-3 (sheet/เมนู/popover) — โหมดมืดเข้มขึ้น + ขอบสว่างบาง ๆ</td><td>แยกชั้นแทนการพึ่ง border อย่างเดียว</td></tr>
+      <tr><td>ชั้น</td><td class="num">labels 2 · overlay 10 · panel 20 · bar 30 · menu 40 · tip 50</td><td>เดิมใช้ 2/5/6 ปนกัน</td></tr>
+      <tr><td>เคลื่อนไหว</td><td class="num">120 / 220 / 320 ms · cubic-bezier(.2,.8,.2,1) · reduced-motion = 0</td><td>sheet/แผง/เมนู ใช้ transform เท่านั้น</td></tr>
+      <tr><td>ขนาด</td><td class="num">--hit 44 · --bar-h 44 · --side-w 360 / 320 / min(300, 42vw)</td><td>ปุ่ม/แท็บ/slider บนจอสัมผัส</td></tr>
+      <tr><td>layout (ตั้งโดย layout.ts)</td><td>--safe-t/r/b/l · --topbar-h · --sheet-h · --side-w-now · --overlay-bottom</td><td>overlay ทุกตัวอ้างค่าเดียวกัน แทน calc(46vh + 112px)</td></tr>
+    </table>
+    <h3>ไอคอน (inline SVG ชุดเดียว เส้น 1.8)</h3>
+    <div class="row" id="icons" style="gap: 12px"></div>
+    <script>
+      document.getElementById('icons').innerHTML = [...document.querySelectorAll('symbol')]
+        .map((s) => `<span class="btn icon" title="${s.id}">${I(s.id.slice(2))}</span>`)
+        .join('');
+    </script>
+  </body>
+</html>
