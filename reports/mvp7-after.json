@@ -1,0 +1,2042 @@
+{
+ "phone-375x667": {
+  "overview": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 481,
+     "w": 375,
+     "h": 186
+    },
+    {
+     "sel": "#topbar",
+     "x": 8,
+     "y": 8,
+     "w": 359,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 233,
+     "y": 60,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 60,
+     "y": 419,
+     "w": 255,
+     "h": 54
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  },
+  "prompt": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 481,
+     "w": 375,
+     "h": 186
+    },
+    {
+     "sel": "#topbar",
+     "x": 8,
+     "y": 8,
+     "w": 359,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 233,
+     "y": 60,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 60,
+     "y": 419,
+     "w": 255,
+     "h": 54
+    },
+    {
+     "sel": "#attrib",
+     "x": 8,
+     "y": 429,
+     "w": 44,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 16,
+     "y": 709,
+     "w": 343,
+     "h": 199
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  },
+  "pin": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 320,
+     "w": 375,
+     "h": 347
+    },
+    {
+     "sel": "#topbar",
+     "x": 8,
+     "y": 8,
+     "w": 359,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 233,
+     "y": 60,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 60,
+     "y": 258,
+     "w": 255,
+     "h": 54
+    },
+    {
+     "sel": "#attrib",
+     "x": 8,
+     "y": 268,
+     "w": 44,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 16,
+     "y": 548,
+     "w": 343,
+     "h": 1426
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  }
+ },
+ "phone-393x852": {
+  "overview": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 666,
+     "w": 393,
+     "h": 186
+    },
+    {
+     "sel": "#topbar",
+     "x": 8,
+     "y": 8,
+     "w": 377,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 251,
+     "y": 60,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 68,
+     "y": 604,
+     "w": 258,
+     "h": 54
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  },
+  "prompt": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 666,
+     "w": 393,
+     "h": 186
+    },
+    {
+     "sel": "#topbar",
+     "x": 8,
+     "y": 8,
+     "w": 377,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 251,
+     "y": 60,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 68,
+     "y": 604,
+     "w": 258,
+     "h": 54
+    },
+    {
+     "sel": "#attrib",
+     "x": 8,
+     "y": 614,
+     "w": 44,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 16,
+     "y": 894,
+     "w": 361,
+     "h": 199
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  },
+  "pin": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 409,
+     "w": 393,
+     "h": 443
+    },
+    {
+     "sel": "#topbar",
+     "x": 8,
+     "y": 8,
+     "w": 377,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 251,
+     "y": 60,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 68,
+     "y": 347,
+     "w": 258,
+     "h": 54
+    },
+    {
+     "sel": "#attrib",
+     "x": 8,
+     "y": 357,
+     "w": 44,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 16,
+     "y": 637,
+     "w": 361,
+     "h": 877
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  }
+ },
+ "phone-land-852x393": {
+  "overview": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 0,
+     "w": 300,
+     "h": 393
+    },
+    {
+     "sel": "#topbar",
+     "x": 308,
+     "y": 8,
+     "w": 536,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 710,
+     "y": 341,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 355,
+     "y": 331,
+     "w": 300,
+     "h": 54
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  },
+  "prompt": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 0,
+     "w": 300,
+     "h": 393
+    },
+    {
+     "sel": "#topbar",
+     "x": 308,
+     "y": 8,
+     "w": 536,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 710,
+     "y": 341,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 329,
+     "y": 331,
+     "w": 300,
+     "h": 54
+    },
+    {
+     "sel": "#attrib",
+     "x": 658,
+     "y": 341,
+     "w": 44,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 16,
+     "y": 166,
+     "w": 267,
+     "h": 269
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  },
+  "pin": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 0,
+     "y": 0,
+     "w": 300,
+     "h": 393
+    },
+    {
+     "sel": "#topbar",
+     "x": 308,
+     "y": 8,
+     "w": 536,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 710,
+     "y": 341,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 329,
+     "y": 331,
+     "w": 300,
+     "h": 54
+    },
+    {
+     "sel": "#attrib",
+     "x": 658,
+     "y": 341,
+     "w": 44,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 16,
+     "y": 166,
+     "w": 267,
+     "h": 1594
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  }
+ },
+ "tablet-820x1180": {
+  "overview": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 320,
+     "h": 1156
+    },
+    {
+     "sel": "#topbar",
+     "x": 344,
+     "y": 12,
+     "w": 464,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 674,
+     "y": 1124,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 401,
+     "y": 1114,
+     "w": 203,
+     "h": 54
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  },
+  "prompt": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 320,
+     "h": 1156
+    },
+    {
+     "sel": "#topbar",
+     "x": 344,
+     "y": 12,
+     "w": 464,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 674,
+     "y": 1124,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 344,
+     "y": 1114,
+     "w": 266,
+     "h": 54
+    },
+    {
+     "sel": "#attrib",
+     "x": 622,
+     "y": 1124,
+     "w": 44,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 29,
+     "y": 179,
+     "w": 286,
+     "h": 251
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  },
+  "pin": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 320,
+     "h": 1156
+    },
+    {
+     "sel": "#topbar",
+     "x": 344,
+     "y": 12,
+     "w": 464,
+     "h": 44
+    },
+    {
+     "sel": "#legend",
+     "x": 674,
+     "y": 1124,
+     "w": 134,
+     "h": 44
+    },
+    {
+     "sel": "#clock",
+     "x": 344,
+     "y": 1114,
+     "w": 266,
+     "h": 54
+    },
+    {
+     "sel": "#attrib",
+     "x": 622,
+     "y": 1124,
+     "w": 44,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 29,
+     "y": 179,
+     "w": 286,
+     "h": 974
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": []
+  }
+ },
+ "laptop-1280x800": {
+  "overview": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 360,
+     "h": 776
+    },
+    {
+     "sel": "#topbar",
+     "x": 384,
+     "y": 12,
+     "w": 884,
+     "h": 80
+    },
+    {
+     "sel": "#legend",
+     "x": 1028,
+     "y": 532,
+     "w": 240,
+     "h": 256
+    },
+    {
+     "sel": "#clock",
+     "x": 550,
+     "y": 742,
+     "w": 300,
+     "h": 46
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": [
+    {
+     "sel": "button.icon-btn.p-collapse",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 159,
+     "h": 36,
+     "text": "วันปกติ"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "ฝนตกหนักกลางเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำเหนือหลาก"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำทะเลหนุนสูง"
+    },
+    {
+     "sel": "#walls",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#dikes",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#drains",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#rain",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#dur",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#flow",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#tide",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "button.on",
+     "w": 112,
+     "h": 36,
+     "text": "ภาพรวมทั้งเมืองภาพรวม"
+    },
+    {
+     "sel": "button.",
+     "w": 146,
+     "h": 36,
+     "text": "พื้นที่ศึกษา (ข้อมูลจริง"
+    },
+    {
+     "sel": "#btn-locate",
+     "w": 132,
+     "h": 36,
+     "text": "ตำแหน่งของฉัน"
+    },
+    {
+     "sel": "button.on",
+     "w": 76,
+     "h": 36,
+     "text": "ภาพเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 102,
+     "h": 36,
+     "text": "แผนที่ความสูง"
+    },
+    {
+     "sel": "#btn-labels",
+     "w": 87,
+     "h": 36,
+     "text": "ป้ายชื่อ"
+    },
+    {
+     "sel": "button.",
+     "w": 67,
+     "h": 36,
+     "text": "ทั้งเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 93,
+     "h": 36,
+     "text": "ใจกลางเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 77,
+     "h": 36,
+     "text": "ปากแม่น้ำ"
+    },
+    {
+     "sel": "button.",
+     "w": 94,
+     "h": 36,
+     "text": "ฝั่งตะวันออก"
+    },
+    {
+     "sel": "#btn-pin",
+     "w": 90,
+     "h": 36,
+     "text": "ปักหมุด"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 109,
+     "h": 36,
+     "text": "เขื่อนริมแม่น้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 121,
+     "h": 36,
+     "text": "คันกั้นน้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 109,
+     "h": 36,
+     "text": "สถานีสูบน้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 121,
+     "h": 36,
+     "text": "อุโมงค์ระบายน้ำ"
+    },
+    {
+     "sel": "#replay",
+     "w": 86,
+     "h": 36,
+     "text": "เล่นใหม่"
+    }
+   ]
+  },
+  "prompt": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 360,
+     "h": 776
+    },
+    {
+     "sel": "#topbar",
+     "x": 384,
+     "y": 12,
+     "w": 884,
+     "h": 80
+    },
+    {
+     "sel": "#legend",
+     "x": 1028,
+     "y": 555,
+     "w": 240,
+     "h": 233
+    },
+    {
+     "sel": "#clock",
+     "x": 550,
+     "y": 742,
+     "w": 300,
+     "h": 46
+    },
+    {
+     "sel": "#attrib",
+     "x": 384,
+     "y": 692,
+     "w": 632,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 928,
+     "y": 100,
+     "w": 340,
+     "h": 245
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": [
+    {
+     "sel": "button.icon-btn.p-collapse",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 159,
+     "h": 36,
+     "text": "วันปกติ"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "ฝนตกหนักกลางเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำเหนือหลาก"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำทะเลหนุนสูง"
+    },
+    {
+     "sel": "#walls",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#dikes",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#drains",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#rain",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#dur",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "button.",
+     "w": 112,
+     "h": 36,
+     "text": "ภาพรวมทั้งเมืองภาพรวม"
+    },
+    {
+     "sel": "button.on",
+     "w": 146,
+     "h": 36,
+     "text": "พื้นที่ศึกษา (ข้อมูลจริง"
+    },
+    {
+     "sel": "#btn-locate",
+     "w": 132,
+     "h": 36,
+     "text": "ตำแหน่งของฉัน"
+    },
+    {
+     "sel": "button.on",
+     "w": 74,
+     "h": 36,
+     "text": "เรียบง่าย"
+    },
+    {
+     "sel": "button.",
+     "w": 63,
+     "h": 36,
+     "text": "สมจริง"
+    },
+    {
+     "sel": "button.",
+     "w": 71,
+     "h": 36,
+     "text": "สมจริง+"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 76,
+     "h": 36,
+     "text": "ภาพเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 102,
+     "h": 36,
+     "text": "แผนที่ความสูง"
+    },
+    {
+     "sel": "#btn-labels",
+     "w": 87,
+     "h": 36,
+     "text": "ป้ายชื่อ"
+    },
+    {
+     "sel": "button.",
+     "w": 66,
+     "h": 36,
+     "text": "ทั้งพื้นที่"
+    },
+    {
+     "sel": "button.",
+     "w": 115,
+     "h": 36,
+     "text": "เกาะรัตนโกสินทร์"
+    },
+    {
+     "sel": "button.",
+     "w": 128,
+     "h": 36,
+     "text": "เยาวราช–หัวลำโพง"
+    },
+    {
+     "sel": "button.",
+     "w": 77,
+     "h": 36,
+     "text": "คลองเตย"
+    },
+    {
+     "sel": "#btn-pin",
+     "w": 90,
+     "h": 36,
+     "text": "ปักหมุด"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 126,
+     "h": 36,
+     "text": "เขื่อนริมแม่น้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 104,
+     "h": 36,
+     "text": "สถานีสูบน้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 126,
+     "h": 36,
+     "text": "อุโมงค์ระบายน้ำ"
+    },
+    {
+     "sel": "#replay",
+     "w": 86,
+     "h": 36,
+     "text": "เล่นใหม่"
+    },
+    {
+     "sel": "button.x.icon-btn",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.primary.gps",
+     "w": 122,
+     "h": 36,
+     "text": "ใช้ตำแหน่งของฉัน"
+    },
+    {
+     "sel": "button.pin",
+     "w": 114,
+     "h": 36,
+     "text": "ปักหมุดบนแผนที่"
+    },
+    {
+     "sel": "button.later",
+     "w": 67,
+     "h": 36,
+     "text": "ไว้ทีหลัง"
+    }
+   ]
+  },
+  "pin": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 360,
+     "h": 776
+    },
+    {
+     "sel": "#topbar",
+     "x": 384,
+     "y": 12,
+     "w": 884,
+     "h": 80
+    },
+    {
+     "sel": "#legend",
+     "x": 1028,
+     "y": 555,
+     "w": 240,
+     "h": 233
+    },
+    {
+     "sel": "#clock",
+     "x": 550,
+     "y": 742,
+     "w": 300,
+     "h": 46
+    },
+    {
+     "sel": "#attrib",
+     "x": 384,
+     "y": 692,
+     "w": 632,
+     "h": 44
+    },
+    {
+     "sel": "#place",
+     "x": 928,
+     "y": 100,
+     "w": 340,
+     "h": 443
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": [
+    {
+     "sel": "button.icon-btn.p-collapse",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 159,
+     "h": 36,
+     "text": "วันปกติ"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "ฝนตกหนักกลางเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำเหนือหลาก"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำทะเลหนุนสูง"
+    },
+    {
+     "sel": "#walls",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#dikes",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#drains",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#rain",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#dur",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "button.",
+     "w": 112,
+     "h": 36,
+     "text": "ภาพรวมทั้งเมืองภาพรวม"
+    },
+    {
+     "sel": "button.on",
+     "w": 146,
+     "h": 36,
+     "text": "พื้นที่ศึกษา (ข้อมูลจริง"
+    },
+    {
+     "sel": "#btn-locate",
+     "w": 132,
+     "h": 36,
+     "text": "ตำแหน่งของฉัน"
+    },
+    {
+     "sel": "button.on",
+     "w": 74,
+     "h": 36,
+     "text": "เรียบง่าย"
+    },
+    {
+     "sel": "button.",
+     "w": 63,
+     "h": 36,
+     "text": "สมจริง"
+    },
+    {
+     "sel": "button.",
+     "w": 71,
+     "h": 36,
+     "text": "สมจริง+"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 76,
+     "h": 36,
+     "text": "ภาพเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 102,
+     "h": 36,
+     "text": "แผนที่ความสูง"
+    },
+    {
+     "sel": "#btn-labels",
+     "w": 87,
+     "h": 36,
+     "text": "ป้ายชื่อ"
+    },
+    {
+     "sel": "button.",
+     "w": 66,
+     "h": 36,
+     "text": "ทั้งพื้นที่"
+    },
+    {
+     "sel": "button.",
+     "w": 115,
+     "h": 36,
+     "text": "เกาะรัตนโกสินทร์"
+    },
+    {
+     "sel": "button.",
+     "w": 128,
+     "h": 36,
+     "text": "เยาวราช–หัวลำโพง"
+    },
+    {
+     "sel": "button.",
+     "w": 77,
+     "h": 36,
+     "text": "คลองเตย"
+    },
+    {
+     "sel": "#btn-pin",
+     "w": 90,
+     "h": 36,
+     "text": "ปักหมุด"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 126,
+     "h": 36,
+     "text": "เขื่อนริมแม่น้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 104,
+     "h": 36,
+     "text": "สถานีสูบน้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 126,
+     "h": 36,
+     "text": "อุโมงค์ระบายน้ำ"
+    },
+    {
+     "sel": "#replay",
+     "w": 86,
+     "h": 36,
+     "text": "เล่นใหม่"
+    },
+    {
+     "sel": "button.x.icon-btn",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    }
+   ]
+  }
+ },
+ "desktop-1920x1080": {
+  "overview": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 360,
+     "h": 1056
+    },
+    {
+     "sel": "#topbar",
+     "x": 384,
+     "y": 12,
+     "w": 1524,
+     "h": 36
+    },
+    {
+     "sel": "#legend",
+     "x": 1668,
+     "y": 812,
+     "w": 240,
+     "h": 256
+    },
+    {
+     "sel": "#clock",
+     "x": 870,
+     "y": 1022,
+     "w": 300,
+     "h": 46
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": [
+    {
+     "sel": "button.icon-btn.p-collapse",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 159,
+     "h": 36,
+     "text": "วันปกติ"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "ฝนตกหนักกลางเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำเหนือหลาก"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำทะเลหนุนสูง"
+    },
+    {
+     "sel": "#walls",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#dikes",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#drains",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#rain",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#dur",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#flow",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#tide",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#subs",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "button.on",
+     "w": 112,
+     "h": 36,
+     "text": "ภาพรวมทั้งเมืองภาพรวม"
+    },
+    {
+     "sel": "button.",
+     "w": 146,
+     "h": 36,
+     "text": "พื้นที่ศึกษา (ข้อมูลจริง"
+    },
+    {
+     "sel": "#btn-locate",
+     "w": 132,
+     "h": 36,
+     "text": "ตำแหน่งของฉัน"
+    },
+    {
+     "sel": "button.on",
+     "w": 76,
+     "h": 36,
+     "text": "ภาพเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 102,
+     "h": 36,
+     "text": "แผนที่ความสูง"
+    },
+    {
+     "sel": "#btn-labels",
+     "w": 87,
+     "h": 36,
+     "text": "ป้ายชื่อ"
+    },
+    {
+     "sel": "button.",
+     "w": 67,
+     "h": 36,
+     "text": "ทั้งเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 93,
+     "h": 36,
+     "text": "ใจกลางเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 77,
+     "h": 36,
+     "text": "ปากแม่น้ำ"
+    },
+    {
+     "sel": "button.",
+     "w": 94,
+     "h": 36,
+     "text": "ฝั่งตะวันออก"
+    },
+    {
+     "sel": "#btn-pin",
+     "w": 90,
+     "h": 36,
+     "text": "ปักหมุด"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 109,
+     "h": 36,
+     "text": "เขื่อนริมแม่น้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 121,
+     "h": 36,
+     "text": "คันกั้นน้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 109,
+     "h": 36,
+     "text": "สถานีสูบน้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 121,
+     "h": 36,
+     "text": "อุโมงค์ระบายน้ำ"
+    },
+    {
+     "sel": "#replay",
+     "w": 86,
+     "h": 36,
+     "text": "เล่นใหม่"
+    }
+   ]
+  },
+  "prompt": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 360,
+     "h": 1056
+    },
+    {
+     "sel": "#topbar",
+     "x": 384,
+     "y": 12,
+     "w": 1524,
+     "h": 80
+    },
+    {
+     "sel": "#legend",
+     "x": 1668,
+     "y": 835,
+     "w": 240,
+     "h": 233
+    },
+    {
+     "sel": "#clock",
+     "x": 870,
+     "y": 1022,
+     "w": 300,
+     "h": 46
+    },
+    {
+     "sel": "#attrib",
+     "x": 703,
+     "y": 989,
+     "w": 634,
+     "h": 27
+    },
+    {
+     "sel": "#place",
+     "x": 1568,
+     "y": 100,
+     "w": 340,
+     "h": 245
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": [
+    {
+     "sel": "button.icon-btn.p-collapse",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 159,
+     "h": 36,
+     "text": "วันปกติ"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "ฝนตกหนักกลางเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำเหนือหลาก"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำทะเลหนุนสูง"
+    },
+    {
+     "sel": "#walls",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#dikes",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#drains",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#rain",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#dur",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#flow",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#tide",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#subs",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "button.",
+     "w": 112,
+     "h": 36,
+     "text": "ภาพรวมทั้งเมืองภาพรวม"
+    },
+    {
+     "sel": "button.on",
+     "w": 146,
+     "h": 36,
+     "text": "พื้นที่ศึกษา (ข้อมูลจริง"
+    },
+    {
+     "sel": "#btn-locate",
+     "w": 132,
+     "h": 36,
+     "text": "ตำแหน่งของฉัน"
+    },
+    {
+     "sel": "button.on",
+     "w": 74,
+     "h": 36,
+     "text": "เรียบง่าย"
+    },
+    {
+     "sel": "button.",
+     "w": 63,
+     "h": 36,
+     "text": "สมจริง"
+    },
+    {
+     "sel": "button.",
+     "w": 71,
+     "h": 36,
+     "text": "สมจริง+"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 76,
+     "h": 36,
+     "text": "ภาพเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 102,
+     "h": 36,
+     "text": "แผนที่ความสูง"
+    },
+    {
+     "sel": "#btn-labels",
+     "w": 87,
+     "h": 36,
+     "text": "ป้ายชื่อ"
+    },
+    {
+     "sel": "button.",
+     "w": 66,
+     "h": 36,
+     "text": "ทั้งพื้นที่"
+    },
+    {
+     "sel": "button.",
+     "w": 115,
+     "h": 36,
+     "text": "เกาะรัตนโกสินทร์"
+    },
+    {
+     "sel": "button.",
+     "w": 128,
+     "h": 36,
+     "text": "เยาวราช–หัวลำโพง"
+    },
+    {
+     "sel": "button.",
+     "w": 77,
+     "h": 36,
+     "text": "คลองเตย"
+    },
+    {
+     "sel": "#btn-pin",
+     "w": 90,
+     "h": 36,
+     "text": "ปักหมุด"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 126,
+     "h": 36,
+     "text": "เขื่อนริมแม่น้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 104,
+     "h": 36,
+     "text": "สถานีสูบน้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 126,
+     "h": 36,
+     "text": "อุโมงค์ระบายน้ำ"
+    },
+    {
+     "sel": "#replay",
+     "w": 86,
+     "h": 36,
+     "text": "เล่นใหม่"
+    },
+    {
+     "sel": "button.x.icon-btn",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.primary.gps",
+     "w": 122,
+     "h": 36,
+     "text": "ใช้ตำแหน่งของฉัน"
+    },
+    {
+     "sel": "button.pin",
+     "w": 114,
+     "h": 36,
+     "text": "ปักหมุดบนแผนที่"
+    },
+    {
+     "sel": "button.later",
+     "w": 67,
+     "h": 36,
+     "text": "ไว้ทีหลัง"
+    }
+   ]
+  },
+  "pin": {
+   "boxes": [
+    {
+     "sel": "#panel",
+     "x": 12,
+     "y": 12,
+     "w": 360,
+     "h": 1056
+    },
+    {
+     "sel": "#topbar",
+     "x": 384,
+     "y": 12,
+     "w": 1524,
+     "h": 80
+    },
+    {
+     "sel": "#legend",
+     "x": 1668,
+     "y": 835,
+     "w": 240,
+     "h": 233
+    },
+    {
+     "sel": "#clock",
+     "x": 870,
+     "y": 1022,
+     "w": 300,
+     "h": 46
+    },
+    {
+     "sel": "#attrib",
+     "x": 703,
+     "y": 989,
+     "w": 634,
+     "h": 27
+    },
+    {
+     "sel": "#place",
+     "x": 1568,
+     "y": 100,
+     "w": 340,
+     "h": 723
+    }
+   ],
+   "overlaps": [],
+   "offscreen": [],
+   "hScroll": false,
+   "smallTargets": [
+    {
+     "sel": "button.icon-btn.p-collapse",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 159,
+     "h": 36,
+     "text": "วันปกติ"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "ฝนตกหนักกลางเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำเหนือหลาก"
+    },
+    {
+     "sel": "button.",
+     "w": 159,
+     "h": 36,
+     "text": "น้ำทะเลหนุนสูง"
+    },
+    {
+     "sel": "#walls",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#dikes",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#drains",
+     "w": 326,
+     "h": 36,
+     "text": "checkbox"
+    },
+    {
+     "sel": "#rain",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#dur",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#flow",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#tide",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "#subs",
+     "w": 326,
+     "h": 36,
+     "text": "range"
+    },
+    {
+     "sel": "button.",
+     "w": 112,
+     "h": 36,
+     "text": "ภาพรวมทั้งเมืองภาพรวม"
+    },
+    {
+     "sel": "button.on",
+     "w": 146,
+     "h": 36,
+     "text": "พื้นที่ศึกษา (ข้อมูลจริง"
+    },
+    {
+     "sel": "#btn-locate",
+     "w": 132,
+     "h": 36,
+     "text": "ตำแหน่งของฉัน"
+    },
+    {
+     "sel": "button.on",
+     "w": 74,
+     "h": 36,
+     "text": "เรียบง่าย"
+    },
+    {
+     "sel": "button.",
+     "w": 63,
+     "h": 36,
+     "text": "สมจริง"
+    },
+    {
+     "sel": "button.",
+     "w": 71,
+     "h": 36,
+     "text": "สมจริง+"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.icon-btn",
+     "w": 46,
+     "h": 36,
+     "text": "button"
+    },
+    {
+     "sel": "button.on",
+     "w": 76,
+     "h": 36,
+     "text": "ภาพเมือง"
+    },
+    {
+     "sel": "button.",
+     "w": 102,
+     "h": 36,
+     "text": "แผนที่ความสูง"
+    },
+    {
+     "sel": "#btn-labels",
+     "w": 87,
+     "h": 36,
+     "text": "ป้ายชื่อ"
+    },
+    {
+     "sel": "button.",
+     "w": 66,
+     "h": 36,
+     "text": "ทั้งพื้นที่"
+    },
+    {
+     "sel": "button.",
+     "w": 115,
+     "h": 36,
+     "text": "เกาะรัตนโกสินทร์"
+    },
+    {
+     "sel": "button.",
+     "w": 128,
+     "h": 36,
+     "text": "เยาวราช–หัวลำโพง"
+    },
+    {
+     "sel": "button.",
+     "w": 77,
+     "h": 36,
+     "text": "คลองเตย"
+    },
+    {
+     "sel": "#btn-pin",
+     "w": 90,
+     "h": 36,
+     "text": "ปักหมุด"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 126,
+     "h": 36,
+     "text": "เขื่อนริมแม่น้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 104,
+     "h": 36,
+     "text": "สถานีสูบน้ำ"
+    },
+    {
+     "sel": "button.lg-item.lg-btn",
+     "w": 126,
+     "h": 36,
+     "text": "อุโมงค์ระบายน้ำ"
+    },
+    {
+     "sel": "#replay",
+     "w": 86,
+     "h": 36,
+     "text": "เล่นใหม่"
+    },
+    {
+     "sel": "button.x.icon-btn",
+     "w": 36,
+     "h": 36,
+     "text": "button"
+    }
+   ]
+  }
+ }
+}

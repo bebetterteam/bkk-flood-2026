@@ -4,7 +4,11 @@
  */
 import { test } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
-import { measure } from './layoutChecks';
+import { measure as measureNow } from './layoutChecks';
+import type { Page } from '@playwright/test';
+
+/** layout.ts วัดใหม่ในเฟรมถัดไป — รอให้นิ่งก่อนวัด */
+const measure = async (page: Page) => (await page.waitForTimeout(500), measureNow(page));
 import { PIN, VIEWPORTS } from './viewports';
 
 const OUT = process.env.AUDIT;
